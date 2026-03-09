@@ -3,6 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const User = require("./models/User")
 
 const app = express();
 
@@ -23,4 +24,20 @@ mongoose.connect(process.env.MONGODB_URI)
 
 app.listen(5000, () => {
     console.log("Server running on port 5000");
+});
+
+app.get("/create-user", async (req, res) => {
+    try {
+        const newUser = new User({
+            username: "eduardo",
+            password: "Eduardito1127)",
+            role: "admin",
+        });
+
+        await newUser.save();
+        res.send("User created successfully");
+    } catch (error) {
+        console.error("Error creating user:", error);
+        res.status(500).send("Error creating user");
+    }
 });
