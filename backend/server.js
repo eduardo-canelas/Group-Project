@@ -3,12 +3,17 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const User = require("./models/User")
+const User = require("./models/User");
+
+const packageRoutes = require("./routes/packageRoutes");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+//Routes
+app.use("/api/packages/packages", packageRoutes);
 
 app.get("/", (req, res) => {
     res.send("API Running");
