@@ -6,6 +6,7 @@ const cors = require("cors");
 const User = require("./models/User");
 
 const packageRoutes = require("./routes/packageRoutes");
+const authRoutes = require("./routes/authRoutes");
 
 const app = express();
 
@@ -14,6 +15,7 @@ app.use(express.json());
 
 //Routes
 app.use("/api/packages/packages", packageRoutes);
+app.use("/api/auth", authRoutes);
 
 app.get("/", (req, res) => {
     res.send("API Running");

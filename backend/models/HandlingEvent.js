@@ -11,6 +11,12 @@ const handlingEventSchema = new mongoose.Schema({
         ref: "Facility",
         required: true
     },
+
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true
+    },
     eventType: {
         type: String,
         enum: ["received", "loaded", "unloaded", "assigned", "inTransit"],
@@ -22,4 +28,4 @@ const handlingEventSchema = new mongoose.Schema({
     },
 })
 
-module.exports = mongoose.model("HandlingEvent", handlinEventSchema);
+module.exports = mongoose.model("HandlingEvent", handlingEventSchema);
