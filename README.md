@@ -95,3 +95,45 @@ Our system provides:
 - transparency
 - tracking history
 - operational visibility
+
+# Development Workflow
+
+To keep the `main` branch stable, all teammates must follow this workflow:
+
+### 1. Sync with the latest changes
+Before starting any new work, make sure your local `main` branch is up to date.
+```bash
+git checkout main
+git pull origin main
+```
+
+### 2. Create a new branch
+Never work directly on `main`. Create a descriptive branch for your task.
+```bash
+git checkout -b feature/your-feature-name
+```
+
+### 3. Make your changes and commit
+Work on your code, then stage and commit your changes.
+```bash
+git add .
+git commit -m "Brief description of what you did"
+```
+
+### 4. Push your branch to GitHub
+```bash
+git push origin feature/your-feature-name
+```
+
+### 5. Open a Pull Request (PR)
+1. Go to the repository on GitHub.
+2. Click the **"Compare & pull request"** button for your branch.
+3. Add a description of your work and click **"Create pull request"**.
+4. Wait for a review (or resolve any conversations) before merging.
+
+### 6. Cleanup
+Once your PR is merged, switch back to `main` and pull the new changes.
+```bash
+git checkout main
+git pull origin main
+```
