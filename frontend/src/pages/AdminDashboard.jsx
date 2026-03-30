@@ -58,13 +58,7 @@ function AdminDashboard() {
         <>
             <div className="admin-dashboard">
                 <h1>Admin Dashboard - Packet Tracker Control</h1>
-                <button onClick={handleLogout} style={{
-                    padding: '10px',
-                    backgroundColor: '#dc3545',
-                    color: 'white',
-                    border: 'none',
-                    cursor: 'pointer'
-                }}>Logout</button>
+                <button onClick={handleLogout}>Logout</button>
             </div>
             <div className="add-package-container">
                 <h2>Create New Package</h2>

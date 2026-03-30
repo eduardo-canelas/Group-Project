@@ -39,13 +39,7 @@ function DriverDashboard() {
         <>
             <div className="driver-dashboard">
                 <h1>Driver Dashboard - Packet Tracker</h1>
-                <button onClick={handleLogout} style={{
-                    padding: '10px',
-                    backgroundColor: '#dc3545',
-                    color: 'white',
-                    border: 'none',
-                    cursor: 'pointer'
-                }}>
+                <button onClick={handleLogout}>
                     Logout
                 </button>
             </div>
@@ -88,6 +82,5 @@ function DriverDashboard() {
 }
 
 export default DriverDashboard;
-
 
 

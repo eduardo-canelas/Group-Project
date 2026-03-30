@@ -27,43 +27,24 @@ function Register() {
     return (
         <div className="register-container">
             <h2>Register - Packet Tracker</h2>
-            {error && <p style={{ color: 'red' }}>{error}</p>}
+            {error && <p className="form-error">{error}</p>}
             <form onSubmit={handleRegister}>
                 <div className="form-group-username">
                     <label>Username:</label>
-                    <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required style={{
-                        width: '100%',
-                        padding: '8px',
-                        marginBottom: '10px'
-                    }} />
+                    <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
                 </div>
                 <div className="form-group-password">
                     <label>Password:</label>
-                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{
-                        width: '100%',
-                        padding: '8px',
-                        marginBottom: '10px'
-                    }} />
+                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                 </div>
                 <div className="form-group-role">
                     <label>Role:</label>
-                    <select value={role} onChange={(e) => setRole(e.target.value)} style={{
-                        width: '100%',
-                        padding: '8px',
-                        marginBottom: '10px'
-                    }}>
+                    <select value={role} onChange={(e) => setRole(e.target.value)}>
                         <option value="driver">Driver</option>
                         <option value="admin">Admin</option>
                     </select>
                 </div>
-                <button type="submit" style={{
-                    width: '100%',
-                    padding: '10px',
-                    backgroundColor: '#007bff',
-                    color: 'white',
-                    border: 'none',
-                    cursor: 'pointer'
-                }}>Register</button>
+                <button type="submit">Register</button>
             </form>
             <p>Already have an account? <Link to="/">Login here</Link></p>
         </div>
