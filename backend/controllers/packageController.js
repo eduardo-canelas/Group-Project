@@ -1,4 +1,5 @@
 const Package = require("../models/Package");
+const mongoose = require("mongoose");
 
 exports.createPackage = async (req, res) => {
     try {
@@ -27,9 +28,33 @@ exports.getAllPackages = async (req, res) => {
     }
 };
 
+exports.getPackageById = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(404).json({ message: "Package not found" });
+        }
+
+        const pkg = await Package.findById(id);
+        if (!pkg) {
+            return res.status(404).json({ message: "Package not found" });
+        }
+
+        res.status(200).json(pkg);
+    } catch (error) {
+        res.status(500).json({
+            message: "Failed to get package", error: error.message
+        });
+    }
+};
+
 exports.updatePackage = async (req, res) => {
     try {
         const { id } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(404).json({ message: "Package not found" });
+        }
         const updatedPackage = await Package.findByIdAndUpdate(id, req.body, { new: true });
         if (!updatedPackage) {
             return res.status(404).json({ message: "Package not found" });
@@ -45,6 +70,9 @@ exports.updatePackage = async (req, res) => {
 exports.deletePackage = async (req, res) => {
     try {
         const { id } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(404).json({ message: "Package not found" });
+        }
         const deletedPackage = await Package.findByIdAndDelete(id);
         if (!deletedPackage) {
             return res.status(404).json({ message: "Package not found" });
@@ -56,4 +84,3 @@ exports.deletePackage = async (req, res) => {
         });
     }
 };
-
