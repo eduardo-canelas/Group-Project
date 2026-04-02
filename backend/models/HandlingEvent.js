@@ -17,15 +17,31 @@ const handlingEventSchema = new mongoose.Schema({
         ref: "User",
         required: true
     },
+    route: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Route",
+        required: true,
+    },
     eventType: {
         type: String,
         enum: ["received", "loaded", "unloaded", "assigned", "inTransit"],
         required: true
     },
+    statusSnapshot: {
+        type: String,
+        enum: ["pending", "picked_up", "in_transit", "delivered", "lost", "returned", "cancelled"],
+        required: true,
+    },
+    notes: {
+        type: String,
+        trim: true,
+    },
     timeStamp: {
         type: Date,
         default: Date.now
     },
-})
+}, { timestamps: true });
+
+handlingEventSchema.index({ package: 1, timeStamp: -1 });
 
 module.exports = mongoose.model("HandlingEvent", handlingEventSchema);

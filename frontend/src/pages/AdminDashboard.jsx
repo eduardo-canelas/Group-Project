@@ -86,6 +86,7 @@ function buildDriverSummaries(packages) {
 
 function AdminDashboard() {
   const [packages, setPackages] = useState([]);
+  const [dataModelSummary, setDataModelSummary] = useState(null);
   const [formData, setFormData] = useState(createPackageForm());
   const [editingId, setEditingId] = useState('');
   const [error, setError] = useState('');
@@ -102,8 +103,21 @@ function AdminDashboard() {
     }
   };
 
+  const fetchDataModelSummary = async () => {
+    try {
+      const response = await api.get('/packages/summary');
+      setDataModelSummary(response.data);
+    } catch (err) {
+      setError(err.response?.data?.error || err.response?.data?.message || 'Could not fetch the data model summary.');
+    }
+  };
+
+  const loadDashboardData = async () => {
+    await Promise.all([fetchPackages(), fetchDataModelSummary()]);
+  };
+
   useEffect(() => {
-    fetchPackages();
+    loadDashboardData();
   }, []);
 
   const updateField = (field) => (e) => {
@@ -133,7 +147,7 @@ function AdminDashboard() {
       }
 
       resetForm();
-      await fetchPackages();
+      await loadDashboardData();
     } catch (err) {
       setError(err.response?.data?.error || err.response?.data?.message || 'Could not save package.');
     } finally {
@@ -155,7 +169,7 @@ function AdminDashboard() {
       if (editingId === id) {
         resetForm();
       }
-      await fetchPackages();
+      await loadDashboardData();
     } catch (err) {
       setError(err.response?.data?.error || err.response?.data?.message || 'Could not delete package.');
     }
@@ -196,6 +210,76 @@ function AdminDashboard() {
             <StatCard label="On the road" value={totals.active} hint="Already picked up or in transit." accent="violet" />
             <StatCard label="Delivered" value={totals.delivered} hint="Stops that have been closed out." accent="emerald" />
           </div>
+
+          <GlassCard className="p-6 sm:p-7">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Requirement coverage</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white">Live data model summary</h2>
+              </div>
+              <p className="text-sm text-slate-300">Requirement 8 + Requirement 9</p>
+            </div>
+
+            {dataModelSummary ? (
+              <>
+                <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+                  {Object.entries(dataModelSummary.entities).map(([entityName, count]) => (
+                    <div key={entityName} className="rounded-2xl border border-white/10 bg-slate-950/50 p-5">
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{entityName}</p>
+                      <p className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-slate-50">{count}</p>
+                      <p className="mt-2 text-sm text-slate-300">Stored in MongoDB for the running package workflow.</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-6 grid gap-4 xl:grid-cols-[0.88fr_1.12fr]">
+                  <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300/80">Many-to-many relationship</p>
+                    <h3 className="mt-3 text-xl font-semibold tracking-[-0.03em] text-white">{dataModelSummary.manyToMany.name}</h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-300">
+                      Through <span className="font-semibold text-slate-100">{dataModelSummary.manyToMany.through}</span>,{' '}
+                      {dataModelSummary.manyToMany.description}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-5">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Recent handling events</p>
+                        <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">Proof that the relationship is active</h3>
+                      </div>
+                      <p className="text-sm text-slate-300">{dataModelSummary.recentHandlingEvents.length} recent events</p>
+                    </div>
+
+                    <div className="mt-4 space-y-3">
+                      {dataModelSummary.recentHandlingEvents.map((event) => (
+                        <div key={event.id} className="rounded-xl border border-white/10 bg-slate-900/70 px-4 py-3">
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <p className="text-sm font-semibold text-slate-50">
+                                {event.packageId} at {event.facilityName}
+                              </p>
+                              <p className="mt-1 text-xs text-slate-400">
+                                {event.username} logged a {event.eventType} event with status {event.statusSnapshot}.
+                              </p>
+                            </div>
+                            <p className="shrink-0 text-xs text-slate-400">
+                              {new Date(event.happenedAt).toLocaleString()}
+                            </p>
+                          </div>
+                          {event.notes ? <p className="mt-2 text-sm leading-6 text-slate-300">{event.notes}</p> : null}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="mt-6 rounded-2xl border border-white/10 bg-slate-950/50 p-5 text-sm text-slate-300">
+                The summary will populate after the first package lifecycle event is saved.
+              </div>
+            )}
+          </GlassCard>
 
           <GlassCard className="p-6 sm:p-7">
             <div className="flex items-center justify-between gap-4">

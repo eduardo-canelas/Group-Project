@@ -19,6 +19,8 @@ const routeSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
-});
+}, { timestamps: true });
+
+routeSchema.index({ startFacility: 1, endFacility: 1 }, { unique: true });
 
 module.exports = mongoose.model("Route", routeSchema);

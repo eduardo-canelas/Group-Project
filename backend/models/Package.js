@@ -26,6 +26,18 @@ const packageSchema = new mongoose.Schema({
     },
     lastUpdatedByUserId: { type: String, trim: true },
     lastUpdatedByUsername: { type: String, trim: true },
+    route: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Route",
+    },
+    currentFacility: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Facility",
+    },
+    lastHandlingEvent: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "HandlingEvent",
+    },
 }, { timestamps: true });
 
 module.exports = mongoose.model("Package", packageSchema);
