@@ -84,6 +84,52 @@ function buildDriverSummaries(packages) {
     .sort((left, right) => left.username.localeCompare(right.username));
 }
 
+const entityCopy = {
+  users: {
+    label: 'Users',
+    description: 'Authenticated operators with role-based access.',
+  },
+  packages: {
+    label: 'Packages',
+    description: 'Tracked shipment records currently on the board.',
+  },
+  facilities: {
+    label: 'Facilities',
+    description: 'Pickup, destination, and transit locations in the network.',
+  },
+  routes: {
+    label: 'Routes',
+    description: 'Origin-to-destination paths assigned to package movement.',
+  },
+  handlingEvents: {
+    label: 'Tracking Records',
+    description: 'Operational history showing package movement, facility touchpoints, and user actions.',
+  },
+};
+
+function formatEventType(eventType) {
+  const labels = {
+    assigned: 'assignment update',
+    received: 'receipt scan',
+    loaded: 'load scan',
+    unloaded: 'delivery or unload scan',
+    inTransit: 'in-transit update',
+  };
+
+  return labels[eventType] || eventType;
+}
+
+function formatStatus(status) {
+  if (!status) {
+    return 'Unknown';
+  }
+
+  return status
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
 function AdminDashboard() {
   const [packages, setPackages] = useState([]);
   const [dataModelSummary, setDataModelSummary] = useState(null);
@@ -214,10 +260,9 @@ function AdminDashboard() {
           <GlassCard className="p-6 sm:p-7">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Requirement coverage</p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white">Live data model summary</h2>
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Data model</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white">Operational data overview</h2>
               </div>
-              <p className="text-sm text-slate-300">Requirement 8 + Requirement 9</p>
             </div>
 
             {dataModelSummary ? (
@@ -225,30 +270,35 @@ function AdminDashboard() {
                 <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
                   {Object.entries(dataModelSummary.entities).map(([entityName, count]) => (
                     <div key={entityName} className="rounded-2xl border border-white/10 bg-slate-950/50 p-5">
-                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{entityName}</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
+                        {entityCopy[entityName]?.label || entityName}
+                      </p>
                       <p className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-slate-50">{count}</p>
-                      <p className="mt-2 text-sm text-slate-300">Stored in MongoDB for the running package workflow.</p>
+                      <p className="mt-2 text-sm text-slate-300">
+                        {entityCopy[entityName]?.description || 'Active records stored for the shipment workflow.'}
+                      </p>
                     </div>
                   ))}
                 </div>
 
                 <div className="mt-6 grid gap-4 xl:grid-cols-[0.88fr_1.12fr]">
                   <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-5">
-                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300/80">Many-to-many relationship</p>
-                    <h3 className="mt-3 text-xl font-semibold tracking-[-0.03em] text-white">{dataModelSummary.manyToMany.name}</h3>
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300/80">Relationship map</p>
+                    <h3 className="mt-3 text-xl font-semibold tracking-[-0.03em] text-white">Package movement oversight</h3>
                     <p className="mt-2 text-sm leading-6 text-slate-300">
-                      Through <span className="font-semibold text-slate-100">{dataModelSummary.manyToMany.through}</span>,{' '}
-                      {dataModelSummary.manyToMany.description}
+                      This view gives administrators a clear record of how shipments move across the facility network. Each
+                      update captures where a package was processed, who recorded the action, and the status at that moment,
+                      making oversight, exception handling, and audit review more reliable.
                     </p>
                   </div>
 
                   <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-5">
                     <div className="flex items-center justify-between gap-4">
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Recent handling events</p>
-                        <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">Proof that the relationship is active</h3>
+                        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Recent activity</p>
+                        <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">Latest tracking updates</h3>
                       </div>
-                      <p className="text-sm text-slate-300">{dataModelSummary.recentHandlingEvents.length} recent events</p>
+                      <p className="text-sm text-slate-300">{dataModelSummary.recentHandlingEvents.length} recent records</p>
                     </div>
 
                     <div className="mt-4 space-y-3">
@@ -260,14 +310,14 @@ function AdminDashboard() {
                                 {event.packageId} at {event.facilityName}
                               </p>
                               <p className="mt-1 text-xs text-slate-400">
-                                {event.username} logged a {event.eventType} event with status {event.statusSnapshot}.
+                                {event.username} recorded a {formatEventType(event.eventType)}. Current status: {formatStatus(event.statusSnapshot)}.
                               </p>
                             </div>
                             <p className="shrink-0 text-xs text-slate-400">
                               {new Date(event.happenedAt).toLocaleString()}
                             </p>
                           </div>
-                          {event.notes ? <p className="mt-2 text-sm leading-6 text-slate-300">{event.notes}</p> : null}
+                          {event.notes ? <p className="mt-2 text-sm leading-6 text-slate-300">Audit note: {event.notes}</p> : null}
                         </div>
                       ))}
                     </div>
