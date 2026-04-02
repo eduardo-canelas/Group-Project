@@ -1,11 +1,7 @@
 const User = require("../models/User");
 const localUserStore = require("../utils/localUserStore");
-const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
-
-function isMongoConnected() {
-    return mongoose.connection.readyState === 1;
-}
+const { isMongoConnected } = require("../utils/userDirectory");
 
 exports.register = async (req, res) => {
     try {
@@ -75,6 +71,7 @@ exports.login = async (req, res) => {
         }
         res.status(200).json({
             message: "Login successful",
+            id: user._id ? user._id.toString() : user.id,
             username: user.username,
             role: user.role
         });

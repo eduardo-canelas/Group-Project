@@ -5,6 +5,9 @@ const statusStyles = {
   picked_up: 'border-cyan-300/35 bg-cyan-300/12 text-cyan-100',
   in_transit: 'border-indigo-300/35 bg-indigo-300/12 text-indigo-100',
   delivered: 'border-emerald-300/35 bg-emerald-300/12 text-emerald-100',
+  lost: 'border-rose-300/35 bg-rose-300/12 text-rose-100',
+  returned: 'border-fuchsia-300/35 bg-fuchsia-300/12 text-fuchsia-100',
+  cancelled: 'border-slate-300/35 bg-slate-300/12 text-slate-100',
 };
 
 export function AppShell({ children, className = '' }) {
@@ -132,6 +135,9 @@ export function StatusBadge({ status }) {
       picked_up: 'Picked Up',
       in_transit: 'In Transit',
       delivered: 'Delivered',
+      lost: 'Lost',
+      returned: 'Returned',
+      cancelled: 'Cancelled',
     }[status] ?? status;
 
   return (

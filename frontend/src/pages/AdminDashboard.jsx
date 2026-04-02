@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import {
   Alert,
@@ -11,26 +10,95 @@ import {
   PageTitle,
   PrimaryButton,
   SecondaryButton,
+  SelectInput,
   StatCard,
   StatusBadge,
   TextInput,
 } from '../components/ui';
+import { clearStoredUser, getStoredUser } from '../lib/auth';
+import api from '../lib/api';
+import {
+  createPackageForm,
+  deliveryTypeOptions,
+  mapPackageToForm,
+  statusOptions,
+} from '../lib/packageFields';
+
+function buildPayload(formData) {
+  const payload = {
+    packageId: formData.packageId,
+    description: formData.description,
+    amount: formData.amount,
+    deliveryType: formData.deliveryType,
+    truckId: formData.truckId,
+    pickupLocation: formData.pickupLocation,
+    dropoffLocation: formData.dropoffLocation,
+    status: formData.status,
+    ownerUsername: formData.ownerUsername,
+  };
+
+  if (formData.weight !== '') {
+    payload.weight = formData.weight;
+  }
+
+  return payload;
+}
+
+function buildDriverSummaries(packages) {
+  const groupedDrivers = new Map();
+
+  packages.forEach((pkg) => {
+    if (!pkg.ownerUsername) {
+      return;
+    }
+
+    const key = pkg.ownerUserId || pkg.ownerUsername;
+    const current = groupedDrivers.get(key) || {
+      id: key,
+      username: pkg.ownerUsername,
+      truckIds: new Set(),
+      packages: [],
+    };
+
+    if (pkg.truckId) {
+      current.truckIds.add(pkg.truckId);
+    }
+
+    current.packages.push({
+      id: pkg._id,
+      packageId: pkg.packageId || 'Legacy record',
+      description: pkg.description,
+      status: pkg.status,
+      truckId: pkg.truckId || '—',
+    });
+
+    groupedDrivers.set(key, current);
+  });
+
+  return Array.from(groupedDrivers.values())
+    .map((driver) => ({
+      ...driver,
+      truckIds: Array.from(driver.truckIds).sort(),
+      packages: driver.packages.sort((left, right) => left.packageId.localeCompare(right.packageId)),
+    }))
+    .sort((left, right) => left.username.localeCompare(right.username));
+}
 
 function AdminDashboard() {
   const [packages, setPackages] = useState([]);
-  const [description, setDescription] = useState('');
-  const [weight, setWeight] = useState('');
+  const [formData, setFormData] = useState(createPackageForm());
+  const [editingId, setEditingId] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const user = getStoredUser();
 
   const fetchPackages = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/packages');
+      const response = await api.get('/packages');
       setPackages(response.data);
-    } catch {
-      setError('Could not fetch packages.');
+    } catch (err) {
+      setError(err.response?.data?.error || err.response?.data?.message || 'Could not fetch packages.');
     }
   };
 
@@ -38,38 +106,63 @@ function AdminDashboard() {
     fetchPackages();
   }, []);
 
-  const handleAddPackage = async (e) => {
+  const updateField = (field) => (e) => {
+    setFormData((current) => ({
+      ...current,
+      [field]: e.target.value,
+    }));
+  };
+
+  const resetForm = () => {
+    setEditingId('');
+    setFormData(createPackageForm());
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      await axios.post('http://localhost:5000/api/packages', {
-        description,
-        weight,
-      });
-      setDescription('');
-      setWeight('');
-      fetchPackages();
-    } catch {
-      setError('Could not add package.');
+      const payload = buildPayload(formData);
+
+      if (editingId) {
+        await api.put(`/packages/${editingId}`, payload);
+      } else {
+        await api.post('/packages', payload);
+      }
+
+      resetForm();
+      await fetchPackages();
+    } catch (err) {
+      setError(err.response?.data?.error || err.response?.data?.message || 'Could not save package.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleEdit = (pkg) => {
+    setEditingId(pkg._id);
+    setFormData(mapPackageToForm(pkg));
+    document.getElementById('shipment-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   const handleDelete = async (id) => {
     setError('');
+
     try {
-      await axios.delete(`http://localhost:5000/api/packages/${id}`);
-      fetchPackages();
-    } catch {
-      setError('Could not delete package.');
+      await api.delete(`/packages/${id}`);
+      if (editingId === id) {
+        resetForm();
+      }
+      await fetchPackages();
+    } catch (err) {
+      setError(err.response?.data?.error || err.response?.data?.message || 'Could not delete package.');
     }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
+    clearStoredUser();
     navigate('/');
   };
 
@@ -79,6 +172,7 @@ function AdminDashboard() {
     active: packages.filter((pkg) => pkg.status === 'picked_up' || pkg.status === 'in_transit').length,
     delivered: packages.filter((pkg) => pkg.status === 'delivered').length,
   };
+  const driverSummaries = buildDriverSummaries(packages);
 
   return (
     <AppShell>
@@ -86,57 +180,198 @@ function AdminDashboard() {
         <div className="space-y-6">
           <PageTitle
             title="Dispatch overview"
-            subtitle={`Welcome back${user?.username ? `, ${user.username}` : ''}. Log new packages, review what is moving, and keep the shipment board current.`}
-            action={
+            subtitle={`Welcome back${user?.username ? `, ${user.username}` : ''}. Create, update, assign, and remove any shipment record across the full delivery board.`}
+            action={(
               <SecondaryButton type="button" onClick={handleLogout}>
                 Log out
               </SecondaryButton>
-            }
+            )}
           />
 
           {error ? <Alert tone="error">{error}</Alert> : null}
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard label="All shipments" value={totals.total} hint="Every record currently on the board." accent="amber" />
-            <StatCard label="Awaiting pickup" value={totals.pending} hint="Ready to be claimed by a driver." accent="sky" />
-            <StatCard label="On the road" value={totals.active} hint="Already picked up or currently in transit." accent="violet" />
-            <StatCard label="Closed out" value={totals.delivered} hint="Stops that have reached delivered." accent="emerald" />
+            <StatCard label="Awaiting pickup" value={totals.pending} hint="Ready to be claimed or loaded." accent="sky" />
+            <StatCard label="On the road" value={totals.active} hint="Already picked up or in transit." accent="violet" />
+            <StatCard label="Delivered" value={totals.delivered} hint="Stops that have been closed out." accent="emerald" />
           </div>
 
-          <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
+          <GlassCard className="p-6 sm:p-7">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Driver roster</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white">Active drivers and truck assignments</h2>
+              </div>
+              <p className="text-sm text-slate-300">{driverSummaries.length} active drivers</p>
+            </div>
+
+            {driverSummaries.length === 0 ? (
+              <div className="mt-6">
+                <EmptyState
+                  title="No active drivers yet"
+                  description="Assign at least one shipment to a driver username and the roster will appear here."
+                />
+              </div>
+            ) : (
+              <div className="mt-6 grid gap-4 lg:grid-cols-2">
+                {driverSummaries.map((driver) => (
+                  <div key={driver.id} className="rounded-2xl border border-white/10 bg-slate-950/50 p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-50">{driver.username}</p>
+                        <p className="mt-1 text-xs text-slate-400">
+                          Truck{driver.truckIds.length === 1 ? '' : 's'}: {driver.truckIds.join(', ') || '—'}
+                        </p>
+                      </div>
+                      <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-slate-200">
+                        {driver.packages.length} package{driver.packages.length === 1 ? '' : 's'}
+                      </span>
+                    </div>
+
+                    <div className="mt-4 space-y-3">
+                      {driver.packages.map((assignedPackage) => (
+                        <div
+                          key={assignedPackage.id}
+                          className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-slate-900/70 px-4 py-3"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-slate-50">
+                              {assignedPackage.packageId} · {assignedPackage.description}
+                            </p>
+                            <p className="mt-1 text-xs text-slate-400">Truck {assignedPackage.truckId}</p>
+                          </div>
+                          <StatusBadge status={assignedPackage.status} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </GlassCard>
+
+          <div className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
             <GlassCard className="p-6 sm:p-7">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-amber-300/80">New shipment</p>
-              <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-white">Add an item to the board</h2>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-amber-300/80">
+                {editingId ? 'Edit shipment' : 'New shipment'}
+              </p>
+              <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-white">
+                {editingId ? 'Update the current record' : 'Add a shipment to a driver truck'}
+              </h2>
               <p className="mt-2 text-sm leading-6 text-slate-300">
-                Enter the shipment details below to create a fresh package record.
+                Use the driver username to control who owns the record. Drivers will only see and manage records assigned to them.
               </p>
 
-              <form id="package-form" className="mt-6 space-y-5" onSubmit={handleAddPackage}>
-                <Field label="Description" hint="Use the name staff will recognize on pickup.">
+              <form id="shipment-form" className="mt-6 space-y-5" onSubmit={handleSubmit}>
+                <Field label="Driver username" hint="This controls ownership for the driver-only view.">
                   <TextInput
                     type="text"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Example: Downtown document pouch"
+                    value={formData.ownerUsername}
+                    onChange={updateField('ownerUsername')}
+                    placeholder="Example: driver1"
                     required
                   />
                 </Field>
 
-                <Field label="Weight" hint="Numbers only, with decimals if needed.">
+                <Field label="Package ID" hint="Use the business package identifier from the project write-up.">
                   <TextInput
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    value={weight}
-                    onChange={(e) => setWeight(e.target.value)}
-                    placeholder="Example: 12.5"
+                    type="text"
+                    value={formData.packageId}
+                    onChange={updateField('packageId')}
+                    placeholder="Example: 1122"
                     required
                   />
                 </Field>
 
-                <PrimaryButton type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Saving shipment...' : 'Save shipment'}
-                </PrimaryButton>
+                <Field label="Item description" hint="What the driver should recognize on pickup.">
+                  <TextInput
+                    type="text"
+                    value={formData.description}
+                    onChange={updateField('description')}
+                    placeholder="Example: Red solo cups"
+                    required
+                  />
+                </Field>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Amount" hint="Quantity in the load.">
+                    <TextInput
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={formData.amount}
+                      onChange={updateField('amount')}
+                      placeholder="150"
+                      required
+                    />
+                  </Field>
+
+                  <Field label="Truck ID" hint="Which truck currently owns the record.">
+                    <TextInput
+                      type="text"
+                      value={formData.truckId}
+                      onChange={updateField('truckId')}
+                      placeholder="254"
+                      required
+                    />
+                  </Field>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Pickup location">
+                    <TextInput
+                      type="text"
+                      value={formData.pickupLocation}
+                      onChange={updateField('pickupLocation')}
+                      placeholder="Amazon House"
+                      required
+                    />
+                  </Field>
+
+                  <Field label="Drop off location">
+                    <TextInput
+                      type="text"
+                      value={formData.dropoffLocation}
+                      onChange={updateField('dropoffLocation')}
+                      placeholder="Target"
+                      required
+                    />
+                  </Field>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Delivery type">
+                    <SelectInput value={formData.deliveryType} onChange={updateField('deliveryType')}>
+                      {deliveryTypeOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </SelectInput>
+                  </Field>
+
+                  <Field label="Status">
+                    <SelectInput value={formData.status} onChange={updateField('status')}>
+                      {statusOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </SelectInput>
+                  </Field>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <PrimaryButton type="submit" className="flex-1" disabled={loading}>
+                    {loading ? 'Saving shipment...' : editingId ? 'Update shipment' : 'Create shipment'}
+                  </PrimaryButton>
+                  {editingId ? (
+                    <SecondaryButton type="button" onClick={resetForm}>
+                      Cancel edit
+                    </SecondaryButton>
+                  ) : null}
+                </div>
               </form>
             </GlassCard>
 
@@ -144,24 +379,24 @@ function AdminDashboard() {
               <div className="flex items-center justify-between gap-4 border-b border-white/10 px-6 py-5 sm:px-7">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Live board</p>
-                  <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white">Current shipments</h2>
+                  <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white">All shipment records</h2>
                 </div>
-                <p className="text-sm text-slate-300">{packages.length} active records</p>
+                <p className="text-sm text-slate-300">{packages.length} records</p>
               </div>
 
               {packages.length === 0 ? (
                 <div className="p-6 sm:p-7">
                   <EmptyState
-                    title="The board is empty"
-                    description="Add the first shipment to start the day's queue."
-                    action={
+                    title="The shipment board is empty"
+                    description="Create the first record and assign it to a driver to start the demonstration flow."
+                    action={(
                       <PrimaryButton
                         type="button"
-                        onClick={() => document.getElementById('package-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                        onClick={() => document.getElementById('shipment-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
                       >
                         Add first shipment
                       </PrimaryButton>
-                    }
+                    )}
                   />
                 </div>
               ) : (
@@ -169,31 +404,49 @@ function AdminDashboard() {
                   <table className="min-w-full divide-y divide-white/10">
                     <thead className="bg-slate-950/40">
                       <tr className="text-left text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-                        <th className="px-6 py-4 sm:px-7">Record</th>
-                        <th className="px-6 py-4 sm:px-7">Description</th>
+                        <th className="px-6 py-4 sm:px-7">Package</th>
+                        <th className="px-6 py-4 sm:px-7">Item</th>
+                        <th className="px-6 py-4 sm:px-7">Driver</th>
+                        <th className="px-6 py-4 sm:px-7">Route</th>
                         <th className="px-6 py-4 sm:px-7">Status</th>
-                        <th className="px-6 py-4 sm:px-7 text-right">Remove</th>
+                        <th className="px-6 py-4 text-right sm:px-7">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/10">
                       {packages.map((pkg) => (
                         <tr key={pkg._id} className="transition hover:bg-white/5">
-                          <td className="max-w-[16rem] px-6 py-5 align-top text-sm text-slate-300 sm:px-7">
-                            <span className="block truncate font-mono text-xs text-slate-400">{pkg._id}</span>
+                          <td className="px-6 py-5 align-top sm:px-7">
+                            <p className="text-sm font-medium text-slate-50">{pkg.packageId || 'Legacy record'}</p>
+                            <p className="mt-1 font-mono text-xs text-slate-400">{pkg._id}</p>
                           </td>
                           <td className="px-6 py-5 align-top sm:px-7">
                             <div className="space-y-1">
                               <p className="text-sm font-medium text-slate-50">{pkg.description}</p>
-                              <p className="text-xs text-slate-400">Weight: {pkg.weight}</p>
+                              <p className="text-xs text-slate-400">
+                                Amount: {pkg.amount ?? pkg.weight ?? '—'} · Type: {pkg.deliveryType || 'store'}
+                              </p>
                             </div>
+                          </td>
+                          <td className="px-6 py-5 align-top text-sm text-slate-300 sm:px-7">
+                            <p>{pkg.ownerUsername || 'Unassigned'}</p>
+                            <p className="mt-1 text-xs text-slate-400">Truck {pkg.truckId || '—'}</p>
+                          </td>
+                          <td className="px-6 py-5 align-top text-sm text-slate-300 sm:px-7">
+                            <p>{pkg.pickupLocation || '—'}</p>
+                            <p className="mt-1 text-xs text-slate-400">to {pkg.dropoffLocation || '—'}</p>
                           </td>
                           <td className="px-6 py-5 align-top sm:px-7">
                             <StatusBadge status={pkg.status} />
                           </td>
                           <td className="px-6 py-5 text-right align-top sm:px-7">
-                            <SecondaryButton type="button" onClick={() => handleDelete(pkg._id)}>
-                              Remove
-                            </SecondaryButton>
+                            <div className="flex justify-end gap-3">
+                              <SecondaryButton type="button" onClick={() => handleEdit(pkg)}>
+                                Edit
+                              </SecondaryButton>
+                              <SecondaryButton type="button" onClick={() => handleDelete(pkg._id)}>
+                                Remove
+                              </SecondaryButton>
+                            </div>
                           </td>
                         </tr>
                       ))}

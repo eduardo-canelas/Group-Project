@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Alert,
@@ -12,12 +11,13 @@ import {
   SelectInput,
   TextInput,
 } from '../components/ui';
+import api from '../lib/api';
 
 const roleCards = [
   {
     role: 'driver',
     title: 'Driver account',
-    text: 'Use this role for packet updates, pickup confirmation, and delivery updates.',
+    text: 'Use this role for truck-specific packet creation, status updates, and deleting only that driver’s own records.',
   },
   {
     role: 'admin',
@@ -40,7 +40,7 @@ function Register() {
     setError('');
 
     try {
-      await axios.post('http://localhost:5000/api/auth/register', {
+      await api.post('/auth/register', {
         username,
         password,
         role,
@@ -140,11 +140,11 @@ function Register() {
                   </div>
                   <div className="rounded-xl border border-white/10 bg-slate-950/50 p-4">
                     <p className="text-sm font-semibold text-slate-100">Drivers see what matters</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-300">The route screen focuses on status updates so progress can be recorded stop by stop.</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-300">The route screen only shows records owned by that driver, which keeps CRUD permissions within the assignment rules.</p>
                   </div>
                   <div className="rounded-xl border border-white/10 bg-slate-950/50 p-4">
-                    <p className="text-sm font-semibold text-slate-100">One live shipment list</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-300">Both roles work from the same records, which keeps handoffs consistent from intake to delivery.</p>
+                    <p className="text-sm font-semibold text-slate-100">One tracked shipment system</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-300">Admins still see the full board, but ownership keeps each driver’s truck data isolated.</p>
                   </div>
                 </div>
               </GlassCard>

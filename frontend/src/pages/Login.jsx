@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Alert,
@@ -12,6 +11,7 @@ import {
   SectionKicker,
   TextInput,
 } from '../components/ui';
+import api from '../lib/api';
 
 const highlights = [
   {
@@ -20,7 +20,7 @@ const highlights = [
   },
   {
     title: 'Route updates',
-    text: 'Drivers move each packet from pickup to final drop with one status control.',
+    text: 'Drivers create, update, and remove only the truck records that belong to them.',
   },
   {
     title: 'Role-aware access',
@@ -54,9 +54,9 @@ function Login() {
       cardClass: 'border-cyan-300/16',
       dividerClass: 'border-cyan-300/16',
       linkClass: 'text-cyan-300 hover:text-cyan-200',
-      summary: 'Driver mode is focused on pickups, route progress, and final delivery updates.',
+      summary: 'Driver mode is focused on truck-specific records, route progress, and final delivery updates.',
       signInTitle: 'Driver panel',
-      signInBody: 'Sign in to view assigned packets, update stop progress, and mark deliveries complete.',
+      signInBody: 'Sign in to manage only the package records assigned to your truck.',
       submitLabel: 'Enter driver workspace',
     },
   };
@@ -68,7 +68,7 @@ function Login() {
     setError('');
 
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', {
+      const response = await api.post('/auth/login', {
         username,
         password,
       });
@@ -103,7 +103,7 @@ function Login() {
                 </GlassCard>
                 <GlassCard className="p-5">
                   <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-300/80">Handoff</p>
-                  <p className="mt-3 text-sm leading-6 text-slate-200">Admins and drivers share the same data.</p>
+                  <p className="mt-3 text-sm leading-6 text-slate-200">Admins see every shipment, while drivers only manage their own truck records.</p>
                 </GlassCard>
                 <GlassCard className="p-5">
                   <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-300/80">Traceability</p>

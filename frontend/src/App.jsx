@@ -4,15 +4,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
 import DriverDashboard from './pages/DriverDashboard';
-
-function getStoredUser() {
-  try {
-    const raw = localStorage.getItem('user');
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
+import { getStoredUser } from './lib/auth';
 
 function PublicOnly({ children }) {
   const user = getStoredUser();

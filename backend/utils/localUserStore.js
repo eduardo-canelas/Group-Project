@@ -50,6 +50,16 @@ async function findUserByUsername(username) {
     return users.find((user) => user.username === normalizedUsername) || null;
 }
 
+async function findUserById(id) {
+    const normalizedId = typeof id === "string" ? id.trim() : "";
+    if (!normalizedId) {
+        return null;
+    }
+
+    const users = await readUsers();
+    return users.find((user) => user.id === normalizedId) || null;
+}
+
 async function createUser({ username, password, role }) {
     const normalizedUsername = normalizeUsername(username);
     const normalizedRole = normalizeRole(role);
@@ -82,6 +92,7 @@ async function createUser({ username, password, role }) {
 
 module.exports = {
     createUser,
+    findUserById,
     findUserByUsername,
     normalizeRole,
     normalizeUsername,
