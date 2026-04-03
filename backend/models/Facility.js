@@ -16,6 +16,6 @@ const facilitySchema = new mongoose.Schema({
     },
 }, { timestamps: true });
 
-facilitySchema.index({ normalizedName: 1 }, { unique: true });
+
 
 module.exports = mongoose.model("Facility", facilitySchema);
