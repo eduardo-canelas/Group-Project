@@ -373,6 +373,33 @@ async function getUserCount() {
     return users.length;
 }
 
+async function getDriverDirectory() {
+    if (isMongoConnected()) {
+        const drivers = await User.find({ role: "driver" })
+            .select("_id username role")
+            .sort({ username: 1 })
+            .lean();
+
+        return drivers.map((driver) => ({
+            id: driver._id.toString(),
+            username: driver.username,
+            role: driver.role,
+            source: "mongo",
+        }));
+    }
+
+    const users = await localUserStore.readUsers();
+    return users
+        .filter((user) => user.role === "driver")
+        .sort((left, right) => left.username.localeCompare(right.username))
+        .map((driver) => ({
+            id: driver.id,
+            username: driver.username,
+            role: driver.role,
+            source: "local",
+        }));
+}
+
 exports.createPackage = async (req, res) => {
     try {
         const newPackage = new Package(await buildPackagePayload(req.body, req.currentUser));
@@ -417,6 +444,7 @@ exports.getDataModelSummary = async (req, res) => {
             facilityCount,
             routeCount,
             handlingEventCount,
+            driverDirectory,
             recentHandlingEvents,
         ] = await Promise.all([
             getUserCount(),
@@ -424,6 +452,7 @@ exports.getDataModelSummary = async (req, res) => {
             Facility.countDocuments(),
             Route.countDocuments(),
             HandlingEvent.countDocuments(),
+            getDriverDirectory(),
             HandlingEvent.find()
                 .sort({ timeStamp: -1, createdAt: -1 })
                 .limit(6)
@@ -446,6 +475,7 @@ exports.getDataModelSummary = async (req, res) => {
                 through: "HandlingEvent",
                 description: "A package can move through many facilities, and every facility can handle many different packages. Each HandlingEvent stores one join record together with the responsible user and route.",
             },
+            driverDirectory,
             recentHandlingEvents: recentHandlingEvents.map((event) => ({
                 id: event._id.toString(),
                 eventType: event.eventType,

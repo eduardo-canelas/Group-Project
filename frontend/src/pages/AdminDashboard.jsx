@@ -233,6 +233,7 @@ function AdminDashboard() {
     delivered: packages.filter((pkg) => pkg.status === 'delivered').length,
   };
   const driverSummaries = buildDriverSummaries(packages);
+  const registeredDrivers = dataModelSummary?.driverDirectory || [];
 
   return (
     <AppShell>
@@ -385,6 +386,36 @@ function AdminDashboard() {
             )}
           </GlassCard>
 
+          <GlassCard className="p-6 sm:p-7">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Registered drivers</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white">Driver accounts ready for assignment</h2>
+              </div>
+              <p className="text-sm text-slate-300">{registeredDrivers.length} registered drivers</p>
+            </div>
+
+            {registeredDrivers.length === 0 ? (
+              <div className="mt-6">
+                <EmptyState
+                  title="No driver accounts yet"
+                  description="Create driver accounts from the Register page. They will appear here for quick assignment."
+                />
+              </div>
+            ) : (
+              <div className="mt-6 flex flex-wrap gap-2">
+                {registeredDrivers.map((driver) => (
+                  <span
+                    key={driver.id}
+                    className="rounded-full border border-white/10 bg-slate-900/70 px-3 py-1 text-xs font-semibold text-slate-200"
+                  >
+                    {driver.username}
+                  </span>
+                ))}
+              </div>
+            )}
+          </GlassCard>
+
           <div className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
             <GlassCard className="p-6 sm:p-7">
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-amber-300/80">
@@ -398,14 +429,27 @@ function AdminDashboard() {
               </p>
 
               <form id="shipment-form" className="mt-6 space-y-5" onSubmit={handleSubmit}>
-                <Field label="Driver username" hint="This controls ownership for the driver-only view.">
+                <Field
+                  label="Driver username"
+                  hint={
+                    registeredDrivers.length > 0
+                      ? 'Start typing to pick from registered driver accounts. This controls ownership for the driver-only view.'
+                      : 'This controls ownership for the driver-only view.'
+                  }
+                >
                   <TextInput
                     type="text"
                     value={formData.ownerUsername}
                     onChange={updateField('ownerUsername')}
+                    list="registered-driver-usernames"
                     placeholder="Example: driver1"
                     required
                   />
+                  <datalist id="registered-driver-usernames">
+                    {registeredDrivers.map((driver) => (
+                      <option key={driver.id} value={driver.username} />
+                    ))}
+                  </datalist>
                 </Field>
 
                 <Field label="Package ID" hint="Use the business package identifier from the project write-up.">

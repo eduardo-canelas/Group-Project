@@ -1,139 +1,203 @@
-# Group-Project
+# Packet Tracker Term Project (CIS 4004 - Spring 2026)
 
-# Project Overview
-A simple web application that tracks who handled a package during the delivery process.
+## Purpose
+This project is a MERN-stack web application for tracking package movement and accountability across drivers, facilities, and routes.  
+It supports two roles (`admin` and `driver`) with role-based access and full package lifecycle updates.
 
-When packages get lost, delayed, or damaged, companies often don’t know where the problem happened. Our app solves this by creating a clear history of package handling.
+## Tech Stack
+- Frontend: React + Vite + React Router + Axios + Tailwind CSS
+- Backend: Node.js + Express + Mongoose
+- Database: MongoDB (Atlas primary URI, local Mongo fallback supported by backend)
 
-Each time a driver or worker handles a package, they press a button and the system records:
+## Project Structure
+- `frontend/` React single-page application
+- `backend/` Express API and Mongo models
+- `backend/models/` data model entities
+- `backend/routes/` API routes
+- `backend/controllers/` business logic
 
-Who handled it
+---
 
-When it happened
+## Assignment Requirement
 
-Where it happened
+1. MERN stack used  
+Implemented with Node.js, Express.js, MongoDB, and React.
 
-Package status
+2. Two user types + login  
+Roles are `admin` and `driver`, with login endpoint and role-based routing.
 
-This creates a full delivery timeline.
+3. First screen is login + user registration + no duplicate usernames  
+Frontend default route is `/` (Login).  
+Register screen is available at `/register`.  
+Duplicate usernames are blocked in backend logic and `User` schema uniqueness.
 
-# Project Requirements
+4. Correct screens for correct users  
+Frontend uses protected role routes:
+- Admin users -> `/admin`
+- Driver users -> `/driver`
+- Wrong-role access redirects automatically.
 
-- [Login system]
-- [Two user roles (Admin and Driver)]
-- [CRUD operations]
-- [Database with relationships]
-- [Single Page Application using React]
-This satisfies all requirements.
+5. Admin has separate functionality from Standard User  
+Admin dashboard can view all records, assign driver ownership, and manage full board.  
+Driver dashboard only shows and manages that driver’s own records.
 
-# Admin (Manager)
+6. Admin can perform CRUD  
+Admin can create, read, update, and delete package records.
 
-- [Admins manage the system.]
+7. Standard user can CRUD only own data  
+Drivers can create/update/delete records owned by their account only.  
+Backend enforces ownership checks before update/delete/view.
 
-They can:
-- [Create packages]
-- [Assign drivers]
-- [View all packages]
-- [View full package history]
-- [Edit or delete records]
+8. At least 5 entities in data model  
+Implemented entities:
+- `users`
+- `packages`
+- `facilities`
+- `routes`
+- `handlingevents`
 
-# Driver (Standard User)
+9. At least one many-to-many relationship  
+Many-to-many is implemented as:
+- `Package <-> Facility` through `HandlingEvent` join records.
 
-- [Drivers update delivery progress.]
+---
 
-They can:
-- [View assigned packages]
-- [Update package status]
-- [Mark when they receive or deliver packages]
-- [Drivers cannot modify other users’ data.]
+## Data Model Summary
 
-# Overall Flow
-User opens app
-        ↓
-Login
-        ↓
-Role detected
-        ↓
-Admin Dashboard OR Driver Dashboard
+- `User`: username, password hash, role (`admin` or `driver`)
+- `Package`: package details, owner fields, route/facility pointers, status history reference
+- `Facility`: normalized location records (warehouse, distribution center, retail store, etc.)
+- `Route`: start facility to end facility with distance/time metadata
+- `HandlingEvent`: join/event record connecting package, facility, user, and route with timestamp and status snapshot
 
-# Admin Flow
-Login
-  ↓
-Create Package
-  ↓
-Assign Driver
-  ↓
-Monitor Updates
-  ↓
-View Package History
+This supports operational history and auditing of package movement.
 
-# Driver Flow
-Login
-  ↓
-See Assigned Packages
-  ↓
-Select Package
-  ↓
-Click Update Button
-  ↓
-System records handling event
+---
 
-# Package Flow
-Package Created
-      ↓
-Picked Up
-      ↓
-In Transit
-      ↓
-Delivery Attempt
-      ↓
-Delivered
+## Step-by-Step: Run the Backend
 
-# Why this app is useful
-When deliveries fail, companies need accountability.
-Our system provides:
-- transparency
-- tracking history
-- operational visibility
-
-# Development Workflow
-
-To keep the `main` branch stable, all teammates must follow this workflow:
-
-### 1. Sync with the latest changes
-Before starting any new work, make sure your local `main` branch is up to date.
+1. Open a terminal and move to backend:
 ```bash
-git checkout main
-git pull origin main
+cd backend
 ```
 
-### 2. Create a new branch
-Never work directly on `main`. Create a descriptive branch for your task.
+2. Install dependencies:
 ```bash
-git checkout -b feature/your-feature-name
+npm install
 ```
 
-### 3. Make your changes and commit
-Work on your code, then stage and commit your changes.
-```bash
-git add .
-git commit -m "Brief description of what you did"
+3. Configure environment variables in `backend/.env`:
+```env
+MONGODB_URI=<your_mongodb_atlas_connection_string>
+MONGODB_LOCAL_URI=mongodb://127.0.0.1:27017/packet-tracker
 ```
 
-### 4. Push your branch to GitHub
+4. Start backend server:
 ```bash
-git push origin feature/your-feature-name
+npm start
 ```
 
-### 5. Open a Pull Request (PR)
-1. Go to the repository on GitHub.
-2. Click the **"Compare & pull request"** button for your branch.
-3. Add a description of your work and click **"Create pull request"**.
-4. Wait for a review (or resolve any conversations) before merging.
+5. Confirm backend is running:
+- API root: `http://localhost:5000/`
+- API base: `http://localhost:5000/api`
 
-### 6. Cleanup
-Once your PR is merged, switch back to `main` and pull the new changes.
+Expected startup behavior:
+- Backend attempts `MONGODB_URI` first.
+- If that fails, backend attempts local fallback URI.
+- If no MongoDB connection is available, login/register can fall back to local user storage, but package/facility/route/event features require MongoDB connectivity.
+
+---
+
+## Step-by-Step: Run the Frontend
+
+1. Open a second terminal and move to frontend:
 ```bash
-git checkout main
-git pull origin main
+cd frontend
 ```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Start Vite dev server:
+```bash
+npm run dev
+```
+
+4. Open app:
+- Frontend URL: `http://localhost:5173/`
+
+The first screen is the login page, satisfying the assignment requirement.
+
+---
+
+## Walkthrough Demo
+
+1. Start backend and frontend using steps above.
+2. Open `http://localhost:5173/`.
+3. Confirm login is the first screen.
+4. Register two users:
+- one `admin`
+- one `driver`
+5. Login as admin:
+- create package records
+- assign owner username to driver
+- view all package rows
+- edit and delete records
+- review recent handling events
+6. Logout and login as driver:
+- verify only driver-owned records are visible
+- create a new driver-owned record
+- update status on own records
+- edit and delete own records
+7. Attempt cross-role/cross-owner actions:
+- verify backend blocks unauthorized access (403/ownership enforcement).
+8. Confirm many-to-many evidence:
+- show handling events generated for package movement through facilities.
+
+---
+
+## API Endpoints Used
+
+Auth:
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+
+Packages (protected by user headers):
+- `POST /api/packages`
+- `GET /api/packages`
+- `GET /api/packages/:id`
+- `PUT /api/packages/:id`
+- `DELETE /api/packages/:id`
+- `GET /api/packages/summary` (admin-focused summary)
+
+Frontend sends current-user headers on API requests:
+- `x-user-id`
+- `x-user-username`
+- `x-user-role`
+
+---
+
+## MongoDB Setup and IP Allowlist Troubleshooting (Atlas)
+
+If Atlas rejects your connection, follow these steps:
+
+1. Go to MongoDB Atlas -> **Network Access**.
+2. Add your current public IP address.
+3. For classroom/demo environments where IP changes often, temporarily allow:
+- `0.0.0.0/0` (open access)
+- then restrict later for security.
+4. Confirm Atlas DB user credentials in **Database Access** are correct.
+5. Confirm your `MONGODB_URI` includes the right username/password, cluster, and auth DB.
+6. Restart backend after any `.env` change.
+
+Common Atlas error signs:
+- `MongoServerSelectionError`
+- timeout/handshake failures
+- authentication failures after IP changes
+
+If Atlas remains blocked, run local MongoDB and rely on:
+- `MONGODB_LOCAL_URI=mongodb://127.0.0.1:27017/packet-tracker`
+
+---
