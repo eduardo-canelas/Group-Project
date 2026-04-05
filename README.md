@@ -1,4 +1,4 @@
-# Packet Tracker Term Project (CIS 4004 - Spring 2026)
+# Packet Tracker Project
 
 ## Purpose
 This project is a MERN-stack web application for tracking package movement and accountability across drivers, facilities, and routes.  
@@ -18,7 +18,7 @@ It supports two roles (`admin` and `driver`) with role-based access and full pac
 
 ---
 
-## Assignment Requirement
+## Requirements
 
 1. MERN stack used  
 Implemented with Node.js, Express.js, MongoDB, and React.
@@ -62,15 +62,13 @@ Many-to-many is implemented as:
 
 ---
 
-## Data Model Summary
+## Data Summary
 
 - `User`: username, password hash, role (`admin` or `driver`)
 - `Package`: package details, owner fields, route/facility pointers, status history reference
 - `Facility`: normalized location records (warehouse, distribution center, retail store, etc.)
 - `Route`: start facility to end facility with distance/time metadata
 - `HandlingEvent`: join/event record connecting package, facility, user, and route with timestamp and status snapshot
-
-This supports operational history and auditing of package movement.
 
 ---
 
@@ -170,34 +168,4 @@ Packages (protected by user headers):
 - `GET /api/packages/:id`
 - `PUT /api/packages/:id`
 - `DELETE /api/packages/:id`
-- `GET /api/packages/summary` (admin-focused summary)
-
-Frontend sends current-user headers on API requests:
-- `x-user-id`
-- `x-user-username`
-- `x-user-role`
-
----
-
-## MongoDB Setup and IP Allowlist Troubleshooting (Atlas)
-
-If Atlas rejects your connection, follow these steps:
-
-1. Go to MongoDB Atlas -> **Network Access**.
-2. Add your current public IP address.
-3. For classroom/demo environments where IP changes often, temporarily allow:
-- `0.0.0.0/0` (open access)
-- then restrict later for security.
-4. Confirm Atlas DB user credentials in **Database Access** are correct.
-5. Confirm your `MONGODB_URI` includes the right username/password, cluster, and auth DB.
-6. Restart backend after any `.env` change.
-
-Common Atlas error signs:
-- `MongoServerSelectionError`
-- timeout/handshake failures
-- authentication failures after IP changes
-
-If Atlas remains blocked, run local MongoDB and rely on:
-- `MONGODB_LOCAL_URI=mongodb://127.0.0.1:27017/packet-tracker`
-
----
+- `GET /api/packages/summary`
