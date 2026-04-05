@@ -72,40 +72,6 @@ Many-to-many is implemented as:
 
 ---
 
-## Step-by-Step: Run the Backend
-
-1. Open a terminal and move to backend:
-```bash
-cd backend
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Configure environment variables in `backend/.env`:
-```env
-MONGODB_URI=<your_mongodb_atlas_connection_string>
-MONGODB_LOCAL_URI=mongodb://127.0.0.1:27017/packet-tracker
-```
-
-4. Start backend server:
-```bash
-npm start
-```
-
-5. Confirm backend is running:
-- API root: `http://localhost:5000/`
-- API base: `http://localhost:5000/api`
-
-Expected startup behavior:
-- Backend attempts `MONGODB_URI` first.
-- If that fails, backend attempts local fallback URI.
-- If no MongoDB connection is available, login/register can fall back to local user storage, but package/facility/route/event features require MongoDB connectivity.
-
----
-
 ## Run the Frontend / Backend
 
 1. Open a second terminal and move to frontend or backend:
