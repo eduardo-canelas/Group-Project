@@ -106,11 +106,12 @@ Expected startup behavior:
 
 ---
 
-## Step-by-Step: Run the Frontend
+## Run the Frontend / Backend
 
-1. Open a second terminal and move to frontend:
+1. Open a second terminal and move to frontend or backend:
 ```bash
 cd frontend
+cd backend
 ```
 
 2. Install dependencies:
@@ -125,12 +126,11 @@ npm run dev
 
 4. Open app:
 - Frontend URL: `http://localhost:5173/`
-
-The first screen is the login page, satisfying the assignment requirement.
+- Backend URL: `http://localhost:5000/`
 
 ---
 
-## Walkthrough Demo
+## Demo
 
 1. Start backend and frontend using steps above.
 2. Open `http://localhost:5173/`.
@@ -149,11 +149,6 @@ The first screen is the login page, satisfying the assignment requirement.
 - create a new driver-owned record
 - update status on own records
 - edit and delete own records
-7. Attempt cross-role/cross-owner actions:
-- verify backend blocks unauthorized access (403/ownership enforcement).
-8. Confirm many-to-many evidence:
-- show handling events generated for package movement through facilities.
-
 ---
 
 ## API Endpoints Used
