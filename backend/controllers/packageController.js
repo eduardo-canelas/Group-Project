@@ -67,6 +67,11 @@ function requireField(value, label) {
     }
 }
 
+function buildTransitFacilityName(truckId) {
+    const normalizedTruckId = normalizeString(truckId);
+    return normalizedTruckId ? `Truck ${normalizedTruckId}` : "In Transit";
+}
+
 function determineFacilityType(name, deliveryType, stopKind) {
     if (stopKind === "transit") {
         return "inTransit";
@@ -128,6 +133,16 @@ async function ensureRoute(startFacility, endFacility) {
             startFacility: startFacility._id,
             endFacility: endFacility._id,
         },
+        {
+            startFacility: startFacility._id,
+            endFacility: endFacility._id,
+        },
+        {
+            new: true,
+            upsert: true,
+            runValidators: true,
+            setDefaultsOnInsert: true,
+        }
     );
 }
 
@@ -157,6 +172,7 @@ async function buildTrackingContext(pkg) {
     let currentFacility = pickupFacility;
     if (pkg.status === "in_transit") {
         currentFacility = await ensureFacility(
+            buildTransitFacilityName(pkg.truckId),
             pkg.deliveryType,
             "transit",
             "In Transit"
