@@ -157,7 +157,6 @@ async function buildTrackingContext(pkg) {
     let currentFacility = pickupFacility;
     if (pkg.status === "in_transit") {
         currentFacility = await ensureFacility(
-            buildTransitFacilityName(pkg.truckId),
             pkg.deliveryType,
             "transit",
             "In Transit"
