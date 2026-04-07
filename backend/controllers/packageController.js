@@ -100,11 +100,6 @@ function determineFacilityType(name, deliveryType, stopKind) {
     return "customerAddress";
 }
 
-function buildTransitFacilityName(truckId) {
-    const normalizedTruckId = normalizeString(truckId);
-    return normalizedTruckId ? `Truck ${normalizedTruckId} Transit` : "In Transit";
-}
-
 async function ensureFacility(name, deliveryType, stopKind, fallbackName) {
     const facilityName = normalizeString(name) || fallbackName;
     const normalizedName = facilityName.toLowerCase();
@@ -126,53 +121,13 @@ async function ensureFacility(name, deliveryType, stopKind, fallbackName) {
     );
 }
 
-function estimateRouteMetrics(startFacility, endFacility, deliveryType) {
-    if (!startFacility || !endFacility) {
-        return { distance: 0, estimatedTime: 0 };
-    }
-
-    if (startFacility.normalizedName === endFacility.normalizedName) {
-        return { distance: 1, estimatedTime: 10 };
-    }
-
-    const baseDistanceByType = {
-        store: 18,
-        residential: 12,
-        return: 16,
-        transfer: 42,
-    };
-
-    const baseDistance = baseDistanceByType[deliveryType] ?? 15;
-    const nameVariance = (startFacility.name.length + endFacility.name.length) % 7;
-    const distance = baseDistance + nameVariance;
-    const estimatedTime = Math.max(15, Math.round(distance * 1.8));
-
-    return {
-        distance,
-        estimatedTime,
-    };
-}
-
-async function ensureRoute(startFacility, endFacility, deliveryType) {
-    const metrics = estimateRouteMetrics(startFacility, endFacility, deliveryType);
+async function ensureRoute(startFacility, endFacility) {
 
     return Route.findOneAndUpdate(
         {
             startFacility: startFacility._id,
             endFacility: endFacility._id,
         },
-        {
-            startFacility: startFacility._id,
-            endFacility: endFacility._id,
-            distance: metrics.distance,
-            estimatedTime: metrics.estimatedTime,
-        },
-        {
-            new: true,
-            upsert: true,
-            runValidators: true,
-            setDefaultsOnInsert: true,
-        }
     );
 }
 
@@ -192,34 +147,6 @@ function mapStatusToEventType(status) {
         default:
             return "assigned";
     }
-}
-
-function buildHandlingEventNotes(pkg, previousPackage, currentUser) {
-    if (!previousPackage) {
-        return `Initial tracking record created by ${currentUser.username}`;
-    }
-
-    const changes = [];
-
-    if (previousPackage.status !== pkg.status) {
-        changes.push(`status ${previousPackage.status || "unknown"} -> ${pkg.status}`);
-    }
-
-    if (previousPackage.ownerUsername !== pkg.ownerUsername) {
-        changes.push(`driver ${previousPackage.ownerUsername || "unassigned"} -> ${pkg.ownerUsername || "unassigned"}`);
-    }
-
-    const previousPickup = normalizeString(previousPackage.pickupLocation);
-    const previousDropoff = normalizeString(previousPackage.dropoffLocation);
-    if (previousPickup !== normalizeString(pkg.pickupLocation) || previousDropoff !== normalizeString(pkg.dropoffLocation)) {
-        changes.push("route endpoints updated");
-    }
-
-    if (changes.length === 0) {
-        return `Record reviewed by ${currentUser.username}`;
-    }
-
-    return changes.join("; ");
 }
 
 async function buildTrackingContext(pkg) {
@@ -265,7 +192,6 @@ async function recordHandlingEvent(pkg, trackingContext, currentUser, previousPa
         user: new mongoose.Types.ObjectId(currentUser.id),
         eventType,
         statusSnapshot: pkg.status,
-        notes: buildHandlingEventNotes(pkg, previousPackage, currentUser),
         timeStamp: new Date(),
     });
 }
@@ -283,10 +209,6 @@ async function buildPackagePayload(body, currentUser, existingPackage) {
 
     if (Object.prototype.hasOwnProperty.call(incoming, "amount")) {
         payload.amount = normalizeNumber(incoming.amount);
-    }
-
-    if (Object.prototype.hasOwnProperty.call(incoming, "weight")) {
-        payload.weight = normalizeNumber(incoming.weight);
     }
 
     const fallbackOwner = existingPackage?.ownerUserId
@@ -309,9 +231,6 @@ async function buildPackagePayload(body, currentUser, existingPackage) {
     if (!existingPackage) {
         payload.createdByRole = currentUser.role;
     }
-
-    payload.lastUpdatedByUserId = currentUser.id;
-    payload.lastUpdatedByUsername = currentUser.username;
 
     if (!existingPackage && currentUser.role === "driver" && !payload.status) {
         payload.status = "in_transit";
@@ -337,12 +256,6 @@ async function buildPackagePayload(body, currentUser, existingPackage) {
 
     if (Number.isNaN(payload.amount)) {
         const error = new Error("Amount must be a valid number");
-        error.statusCode = 400;
-        throw error;
-    }
-
-    if (Number.isNaN(payload.weight)) {
-        const error = new Error("Weight must be a valid number");
         error.statusCode = 400;
         throw error;
     }
@@ -434,9 +347,6 @@ exports.getAllPackages = async (req, res) => {
 
 exports.getDataModelSummary = async (req, res) => {
     try {
-        if (req.currentUser.role !== "admin") {
-            return res.status(403).json({ message: "Only administrators can view the data model summary" });
-        }
 
         const [
             userCount,
@@ -480,7 +390,7 @@ exports.getDataModelSummary = async (req, res) => {
                 id: event._id.toString(),
                 eventType: event.eventType,
                 statusSnapshot: event.statusSnapshot,
-                notes: event.notes || "",
+                /*notes: event.notes || "",*/
                 happenedAt: event.timeStamp,
                 packageId: event.package?.packageId || "Unknown package",
                 packageDescription: event.package?.description || "",
