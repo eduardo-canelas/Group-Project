@@ -11,7 +11,6 @@ const handlingEventSchema = new mongoose.Schema({
         ref: "Facility",
         required: true
     },
-
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
@@ -31,14 +30,6 @@ const handlingEventSchema = new mongoose.Schema({
         type: String,
         enum: ["pending", "picked_up", "in_transit", "delivered", "lost", "returned", "cancelled"],
         required: true,
-    },
-    notes: {
-        type: String,
-        trim: true,
-    },
-    timeStamp: {
-        type: Date,
-        default: Date.now
     },
 }, { timestamps: true });
 

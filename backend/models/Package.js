@@ -24,8 +24,6 @@ const packageSchema = new mongoose.Schema({
         type: String,
         enum: ["admin", "driver"]
     },
-    lastUpdatedByUserId: { type: String, trim: true },
-    lastUpdatedByUsername: { type: String, trim: true },
     route: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Route",

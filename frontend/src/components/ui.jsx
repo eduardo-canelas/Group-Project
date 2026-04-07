@@ -33,50 +33,26 @@ export function GlassCard({ children, className = '' }) {
 }
 
 export function SectionKicker({ children }) {
-  return <p className="text-[0.7rem] font-semibold uppercase tracking-[0.32em] text-amber-200/80">{children}</p>;
+  return <p className="text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-amber-200/80">{children}</p>;
 }
 
-export function PageTitle({ title, subtitle, action }) {
+export function PageTitle({ title, action }) {
   return (
     <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
       <div className="max-w-3xl">
-        <SectionKicker>Packet Tracker</SectionKicker>
+        <SectionKicker>Package Tracker</SectionKicker>
         <h1 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-50 sm:text-4xl">{title}</h1>
-        {subtitle ? <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300/95 sm:text-base">{subtitle}</p> : null}
       </div>
       {action ? <div className="shrink-0">{action}</div> : null}
     </div>
   );
 }
 
-export function StatCard({ label, value, hint, accent = 'amber' }) {
-  const accentMap = {
-    amber: 'bg-amber-300 text-slate-950',
-    sky: 'bg-cyan-300 text-slate-950',
-    emerald: 'bg-emerald-300 text-slate-950',
-    violet: 'bg-indigo-300 text-slate-950',
-  };
-
-  return (
-    <GlassCard className="relative overflow-hidden p-5">
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-xs font-medium uppercase tracking-[0.24em] text-slate-400">{label}</p>
-        <span className={`inline-flex h-3 w-3 rounded-full ${accentMap[accent] ?? accentMap.amber}`} />
-      </div>
-      <div className="mt-5 flex items-end gap-3">
-        <span className="text-3xl font-semibold tracking-[-0.04em] text-slate-50">{value}</span>
-      </div>
-      {hint ? <p className="mt-2 text-sm leading-6 text-slate-300">{hint}</p> : null}
-    </GlassCard>
-  );
-}
-
-export function Field({ label, hint, children }) {
+export function Field({ label, children }) {
   return (
     <label className="block space-y-2">
       <span className="text-sm font-medium text-slate-200">{label}</span>
       {children}
-      {hint ? <span className="block text-xs leading-5 text-slate-400">{hint}</span> : null}
     </label>
   );
 }
@@ -111,7 +87,7 @@ export function SecondaryButton({ children, className = '', ...props }) {
   return (
     <button
       {...props}
-      className={`inline-flex items-center justify-center rounded-xl border border-white/12 bg-white/[0.03] px-5 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/[0.08] focus:outline-none focus:ring-4 focus:ring-white/10 disabled:cursor-not-allowed disabled:opacity-60 ${className}`.trim()}
+      className={`inline-flex items-center justify-center rounded-xl border border-white/12 bg-white/[0.03] px-5 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/[0.08] focus:outline-none focus:ring-4 focus:ring-white/10 disabled:opacity-60 ${className}`.trim()}
     >
       {children}
     </button>
@@ -150,15 +126,11 @@ export function StatusBadge({ status }) {
   );
 }
 
-export function EmptyState({ title, description, action }) {
+export function EmptyState({ title, description }) {
   return (
     <GlassCard className="p-8 text-center">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl border border-white/10 bg-slate-950/70 text-slate-300">
-        <span className="text-lg font-semibold">0</span>
-      </div>
       <h3 className="mt-5 text-lg font-semibold text-slate-50">{title}</h3>
       <p className="mt-2 text-sm leading-6 text-slate-300">{description}</p>
-      {action ? <div className="mt-6">{action}</div> : null}
     </GlassCard>
   );
 }

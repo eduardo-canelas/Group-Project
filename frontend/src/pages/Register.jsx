@@ -13,30 +13,15 @@ import {
 } from '../components/ui';
 import api from '../lib/api';
 
-const roleCards = [
-  {
-    role: 'driver',
-    title: 'Driver account',
-    text: 'Use this role for truck-specific packet creation, status updates, and deleting only that driver’s own records.',
-  },
-  {
-    role: 'admin',
-    title: 'Admin account',
-    text: 'Use this role for packet logging, packet assignment, and packet removal across the full shipment board.',
-  },
-];
-
 function Register() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('driver');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
 
     try {
@@ -49,27 +34,21 @@ function Register() {
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
     <AppShell>
       <PageFrame className="py-4 sm:py-6 lg:py-8">
-        <div className="grid min-h-[calc(100vh-2rem)] gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+        <div className="grid min-h-[calc(100vh-2rem)] gap-6 lg:grid-cols-1">
           <section className="order-2 flex items-center justify-center py-8 lg:order-1 lg:py-14">
             <GlassCard className="w-full max-w-md p-6 sm:p-8">
               <SectionKicker>Create account</SectionKicker>
-              <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-white">Register a new user</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-300">
-                Create the login first, then send the person to the workspace that matches their role.
-              </p>
-
+              
               {error ? <Alert tone="error">{error}</Alert> : null}
 
               <form className="mt-6 space-y-5" onSubmit={handleRegister}>
-                <Field label="Username" hint="Pick a unique handle for this operator.">
+                <Field label="Username">
                   <TextInput
                     type="text"
                     value={username}
@@ -96,8 +75,8 @@ function Register() {
                   </SelectInput>
                 </Field>
 
-                <PrimaryButton type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Creating account...' : 'Create user'}
+                <PrimaryButton type="submit" className="w-full">
+                  Create user
                 </PrimaryButton>
               </form>
 
@@ -112,44 +91,6 @@ function Register() {
             </GlassCard>
           </section>
 
-          <section className="order-1 flex items-center lg:order-2">
-            <div className="max-w-2xl py-8 lg:py-14">
-              <SectionKicker>Packet Tracker</SectionKicker>
-              <h1 className="mt-4 max-w-xl text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl lg:text-6xl">
-                One board, two roles, clear ownership.
-              </h1>
-              <p className="mt-5 max-w-xl text-base leading-7 text-slate-300 sm:text-lg">
-                Registration decides who can manage the queue and who can move it forward.
-              </p>
-
-              <div className="mt-8 grid gap-4 sm:grid-cols-2">
-                {roleCards.map((card) => (
-                  <GlassCard key={card.role} className="p-5">
-                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-amber-300/80">{card.title}</p>
-                    <p className="mt-3 text-sm leading-6 text-slate-200">{card.text}</p>
-                  </GlassCard>
-                ))}
-              </div>
-
-              <GlassCard className="mt-8 p-6 sm:p-7">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">How the workflow stays clear</p>
-                <div className="mt-5 grid gap-4 sm:grid-cols-3">
-                  <div className="rounded-xl border border-white/10 bg-slate-950/50 p-4">
-                    <p className="text-sm font-semibold text-slate-100">Dispatch stays organized</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-300">Admins can log new packets and keep the board accurate before drivers head out.</p>
-                  </div>
-                  <div className="rounded-xl border border-white/10 bg-slate-950/50 p-4">
-                    <p className="text-sm font-semibold text-slate-100">Drivers see what matters</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-300">The route screen only shows records owned by that driver, which keeps CRUD permissions within the assignment rules.</p>
-                  </div>
-                  <div className="rounded-xl border border-white/10 bg-slate-950/50 p-4">
-                    <p className="text-sm font-semibold text-slate-100">One tracked shipment system</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-300">Admins still see the full board, but ownership keeps each driver’s truck data isolated.</p>
-                  </div>
-                </div>
-              </GlassCard>
-            </div>
-          </section>
         </div>
       </PageFrame>
     </AppShell>

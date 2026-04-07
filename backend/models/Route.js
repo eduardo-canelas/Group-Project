@@ -11,14 +11,6 @@ const routeSchema = new mongoose.Schema({
         ref: "Facility",
         required: true
     },
-    distance: {
-        type: Number,
-        required: true
-    },
-    estimatedTime: {
-        type: Number,
-        required: true,
-    },
 }, { timestamps: true });
 
 routeSchema.index({ startFacility: 1, endFacility: 1 }, { unique: true });
