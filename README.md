@@ -16,7 +16,7 @@ This is our CIS 4004 MERN-stack single-page app that tracks packages across driv
 - Every create/update writes a handling event so we can track history.
 - Admins also see a driver roster and recent handling events.
 
-## requirement checklist
+## checklist
 1. MERN stack
 We used Node.js, Express.js, MongoDB, and React.
 
@@ -44,7 +44,7 @@ We use these entities: `User`, `Package`, `Facility`, `Route`, `HandlingEvent`.
 9. At least one many-to-many relationship
 Packages and facilities are many-to-many through `HandlingEvent`.
 
-## data model summary
+## data model
 - User: username, password (hashed), role
 - Package: packageId, description, amount, deliveryType, truckId, pickupLocation, dropoffLocation, status, owner, route, currentFacility
 - Facility: name, normalizedName, location type
@@ -85,7 +85,7 @@ local MongoDB
 MONGODB_LOCAL_URI="mongodb://127.0.0.1:27017/packet-tracker"
 ```
 
-## collections used in MongoDB
+## MongoDB collections
 The app creates these collections automatically:
 - `users`
 - `packages`
@@ -93,7 +93,7 @@ The app creates these collections automatically:
 - `routes`
 - `handlingevents`
 
-## basic demo flow
+## demo
 1. Register two users: one `admin`, one `driver`.
 2. Log in as admin and create a package assigned to the driver.
 3. Log out, log in as driver, and verify only assigned packages appear.
