@@ -3,7 +3,6 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-const User = require("./models/User");
 
 const packageRoutes = require("./routes/packageRoutes");
 const authRoutes = require("./routes/authRoutes");
@@ -43,22 +42,6 @@ async function startServer() {
 
         app.get("/", (req, res) => {
             res.send("API Running");
-        });
-
-        app.get("/create-user", async (req, res) => {
-            try {
-                const newUser = new User({
-                    username: "eduardo",
-                    password: "Eduardito1127)",
-                    role: "admin",
-                });
-
-                await newUser.save();
-                res.send("User created successfully");
-            } catch (error) {
-                console.error("Error creating user:", error);
-                res.status(500).send("Error creating user");
-            }
         });
 
         app.listen(5000, () => {

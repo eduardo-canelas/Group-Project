@@ -43,6 +43,7 @@ function Login() {
             <GlassCard className={`w-full max-w-md p-6 sm:p-8`}>
               <div className="pt-6">
                 <div>
+                  <h1 className="mt-3 text-3xl font-bold">Packet Tracker</h1>
                   <SectionKicker>Sign in</SectionKicker>
                 </div>
               </div>

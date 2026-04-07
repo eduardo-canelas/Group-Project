@@ -33,7 +33,7 @@ export function GlassCard({ children, className = '' }) {
 }
 
 export function SectionKicker({ children }) {
-  return <p className="text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-amber-200/80">{children}</p>;
+  return <p className="text-[0.7rem] font-bold tracking-[0.3em] text-amber-200/80">{children}</p>;
 }
 
 export function PageTitle({ title, action }) {
