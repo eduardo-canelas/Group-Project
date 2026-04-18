@@ -5,6 +5,7 @@ const Route = require("../models/Route");
 const HandlingEvent = require("../models/HandlingEvent");
 const User = require("../models/User");
 const localUserStore = require("../utils/localUserStore");
+const { buildNetworkIntelligence } = require("../utils/networkIntelligence");
 const { findUserByUsername, isMongoConnected, normalizeString } = require("../utils/userDirectory");
 
 const DRIVER_EDITABLE_FIELDS = [
@@ -362,13 +363,13 @@ exports.getAllPackages = async (req, res) => {
 
 exports.getDataModelSummary = async (req, res) => {
     try {
-
         const [
             userCount,
             packageCount,
             facilityCount,
             routeCount,
             handlingEventCount,
+            packagesWithTracking,
             driverDirectory,
             recentHandlingEvents,
         ] = await Promise.all([
@@ -377,6 +378,10 @@ exports.getDataModelSummary = async (req, res) => {
             Facility.countDocuments(),
             Route.countDocuments(),
             HandlingEvent.countDocuments(),
+            Package.find()
+                .populate("currentFacility", "name location")
+                .populate("lastHandlingEvent", "eventType statusSnapshot timeStamp")
+                .lean(),
             getDriverDirectory(),
             HandlingEvent.find()
                 .sort({ timeStamp: -1, createdAt: -1 })
@@ -386,6 +391,10 @@ exports.getDataModelSummary = async (req, res) => {
                 .populate("user", "username role")
                 .lean(),
         ]);
+        const networkIntelligence = buildNetworkIntelligence({
+            packages: packagesWithTracking,
+            recentEvents: recentHandlingEvents,
+        });
 
         res.status(200).json({
             entities: {
@@ -400,6 +409,7 @@ exports.getDataModelSummary = async (req, res) => {
                 through: "HandlingEvent",
                 description: "A package can move through many facilities, and every facility can handle many different packages. Each HandlingEvent stores one join record together with the responsible user and route.",
             },
+            networkIntelligence,
             driverDirectory,
             recentHandlingEvents: recentHandlingEvents.map((event) => ({
                 id: event._id.toString(),

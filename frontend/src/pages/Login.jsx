@@ -1,15 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import {
-  Alert,
-  AppShell,
-  Field,
-  GlassCard,
-  PageFrame,
-  PrimaryButton,
-  SectionKicker,
-  TextInput,
-} from '../components/ui';
+import { Alert, AppShell, Field, GlassCard, PageFrame, PrimaryButton, SecondaryButton, SectionHeading, TextInput } from '../components/ui';
+import { usePageMotion } from '../components/motion';
+import { SeamlessVideo } from '../components/video-device';
 import api from '../lib/api';
 
 function Login() {
@@ -17,46 +10,48 @@ function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const scope = usePageMotion();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const handleLogin = async (event) => {
+    event.preventDefault();
     setError('');
-
     try {
-      const response = await api.post('/auth/login', {
-        username,
-        password,
-      });
-
+      const response = await api.post('/auth/login', { username, password });
       localStorage.setItem('user', JSON.stringify(response.data));
       navigate(response.data.role === 'admin' ? '/admin' : '/driver');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Login failed. Please check your credentials.');
     }
   };
 
   return (
     <AppShell>
-      <PageFrame className="py-4 sm:py-6 lg:py-8">
-        <div className="grid min-h-[calc(100vh-2rem)] gap-6 lg:grid-cols-1">
-          <section className="flex items-center justify-center py-8 lg:py-14">
-            <GlassCard className={`w-full max-w-md p-6 sm:p-8`}>
-              <div className="pt-6">
-                <div>
-                  <h1 className="mt-3 text-3xl font-bold">Packet Tracker</h1>
-                  <SectionKicker>Sign in</SectionKicker>
-                </div>
+      <PageFrame className="py-6 lg:py-10">
+        <div ref={scope} className="grid gap-6 lg:min-h-[calc(100vh-8rem)] lg:grid-cols-[1.22fr_0.78fr]">
+          <div className="login-video-panel order-1 surface-card motion-hero">
+            <SeamlessVideo />
+          </div>
+
+          <GlassCard className="order-2 motion-hero flex items-center p-6 sm:p-8 lg:p-10">
+            <div className="w-full">
+              <div className="mb-6">
+                <SectionHeading
+                  as="h1"
+                  kicker="Secure entry"
+                  title="Enter RoutePulse"
+                  description="Secure access for dispatchers and drivers, with the live product preview still visible on mobile."
+                />
               </div>
 
               {error ? <Alert tone="error">{error}</Alert> : null}
 
-              <form className="mt-6 space-y-5" onSubmit={handleLogin}>
+              <form className="mt-7 space-y-5" onSubmit={handleLogin}>
                 <Field label="Username">
                   <TextInput
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Username"
+                    placeholder="dispatcher-main"
                     autoComplete="username"
                     required
                   />
@@ -66,25 +61,23 @@ function Login() {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Password"
+                    placeholder="Your password"
                     autoComplete="current-password"
                     required
                   />
                 </Field>
-
-                <PrimaryButton type="submit" className="w-full">
-                  Enter Workspace
-                </PrimaryButton>
+                <PrimaryButton type="submit" className="w-full">Enter workspace</PrimaryButton>
               </form>
 
-              <div className="mt-6 flex items-center justify-between gap-4 border-t border-white/10 pt-5 text-sm">
-                <p className="text-slate-300">Need an account?</p>
-                <Link to="/register" className={`font-semibold transition text-amber-300 hover:text-amber-200`}>
-                  Register here
+              <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--border)] pt-6">
+                <p className="text-sm text-[color:var(--muted)]">Need a new account for a dispatcher or driver?</p>
+                <Link to="/register">
+                  <SecondaryButton type="button">Create account</SecondaryButton>
                 </Link>
               </div>
-            </GlassCard>
-          </section>
+            </div>
+          </GlassCard>
+
         </div>
       </PageFrame>
     </AppShell>

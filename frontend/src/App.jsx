@@ -1,10 +1,14 @@
 import React from 'react';
+//Load react router
 import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom';
+//Load pages
 import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
 import DriverDashboard from './pages/DriverDashboard';
+//Load auth helper
 import { getStoredUser } from './lib/auth';
+import { ThemeProvider } from './components/theme';
 
 function PublicOnly({ children }) {
   const user = getStoredUser();
@@ -36,42 +40,44 @@ function RequireRole({ role, children }) {
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <PublicOnly>
-              <Login />
-            </PublicOnly>
-          }
-        />
-        <Route
-          path="/register"
-          element={
-            <PublicOnly>
-              <Register />
-            </PublicOnly>
-          }
-        />
-        <Route
-          path="/admin"
-          element={
-            <RequireRole role="admin">
-              <AdminDashboard />
-            </RequireRole>
-          }
-        />
-        <Route
-          path="/driver"
-          element={
-            <RequireRole role="driver">
-              <DriverDashboard />
-            </RequireRole>
-          }
-        />
-      </Routes>
-    </Router>
+    <ThemeProvider>
+      <Router>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <PublicOnly>
+                <Login />
+              </PublicOnly>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <PublicOnly>
+                <Register />
+              </PublicOnly>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <RequireRole role="admin">
+                <AdminDashboard />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/driver"
+            element={
+              <RequireRole role="driver">
+                <DriverDashboard />
+              </RequireRole>
+            }
+          />
+        </Routes>
+      </Router>
+    </ThemeProvider>
   );
 }
 

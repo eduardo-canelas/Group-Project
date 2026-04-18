@@ -1,4 +1,5 @@
 require("dotenv").config();
+require("dotenv").config({ path: ".env.local", override: true });
 
 const express = require("express");
 const mongoose = require("mongoose");
@@ -6,8 +7,10 @@ const cors = require("cors");
 
 const packageRoutes = require("./routes/packageRoutes");
 const authRoutes = require("./routes/authRoutes");
+const aiRoutes = require("./routes/aiRoutes");
 
 const app = express();
+const port = Number(process.env.PORT) || 5050;
 
 app.use(cors());
 app.use(express.json());
@@ -39,13 +42,14 @@ async function startServer() {
         // Routes
         app.use("/api/packages", packageRoutes);
         app.use("/api/auth", authRoutes);
+        app.use("/api/ai", aiRoutes);
 
         app.get("/", (req, res) => {
             res.send("API Running");
         });
 
-        app.listen(5000, () => {
-            console.log(`Server running on port 5000${dbConnected ? "" : " (local auth fallback active)"}`);
+        app.listen(port, () => {
+            console.log(`Server running on port ${port}${dbConnected ? "" : " (local auth fallback active)"}`);
         });
     } catch (error) {
         console.error("Server startup failed:", error.message);
