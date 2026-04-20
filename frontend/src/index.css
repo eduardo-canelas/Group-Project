@@ -3280,6 +3280,40 @@
     justify-items: start;
     text-align: left;
   }
+
+  .driver-support-panel,
+  .driver-support-panel > .mt-5.grid,
+  .driver-support-panel .surface-panel,
+  .driver-support-panel-content {
+    height: auto;
+    min-height: auto;
+    max-height: none;
+  }
+
+  .driver-support-panel-content {
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .shift-guide-list {
+    gap: 0.75rem;
+  }
+
+  .shift-guide-item {
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+    padding: 1rem;
+  }
+
+  .shift-guide-item > div {
+    min-width: 0;
+  }
+
+  .shift-guide-step {
+    width: fit-content;
+    min-width: 3rem;
+    padding-inline: 0.7rem;
+  }
 }
 
 @keyframes freight-package-release {
