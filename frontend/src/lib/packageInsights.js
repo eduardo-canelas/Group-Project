@@ -38,6 +38,64 @@ export function getPriorityPackages(packages) {
     .slice(0, 4);
 }
 
+export function getDriverNextStep(pkg) {
+  const route = `${pkg.pickupLocation || 'pickup'} -> ${pkg.dropoffLocation || 'drop-off'}`;
+
+  if (pkg.status === 'pending') {
+    return {
+      label: 'Confirm pickup',
+      detail: `Scan ${pkg.packageId || 'this packet'} at pickup and verify the truck before it leaves ${pkg.pickupLocation || 'the stop'}.`,
+      helper: `Pickup waiting on ${route}.`,
+    };
+  }
+
+  if (pkg.status === 'picked_up') {
+    return {
+      label: 'Move to in transit',
+      detail: `Pickup is done. Update the packet to in transit once ${pkg.truckId || 'the truck'} is moving toward ${pkg.dropoffLocation || 'the drop-off'}.`,
+      helper: `Truck ${pkg.truckId || 'pending'} should be moving on ${route}.`,
+    };
+  }
+
+  if (pkg.status === 'in_transit') {
+    return {
+      label: 'Confirm delivery stop',
+      detail: `Check the next stop, rescan on arrival, and mark delivered only after the drop-off is confirmed at ${pkg.dropoffLocation || 'the destination'}.`,
+      helper: `Active route: ${route}.`,
+    };
+  }
+
+  if (pkg.status === 'returned') {
+    return {
+      label: 'Get reroute decision',
+      detail: `This packet came back. Confirm the next destination or closure decision with dispatch before it sits longer.`,
+      helper: `Return route needs a new plan for ${route}.`,
+    };
+  }
+
+  if (pkg.status === 'lost') {
+    return {
+      label: 'Recover packet now',
+      detail: `Check the last scan, truck, and stop in that order, then alert dispatch if the packet is still missing.`,
+      helper: `Last known route: ${route}.`,
+    };
+  }
+
+  if (pkg.status === 'cancelled') {
+    return {
+      label: 'Close the record',
+      detail: 'Make sure the packet is no longer moving and update the shipment record so dispatch and inventory stay aligned.',
+      helper: `Cancelled packet still tied to ${route}.`,
+    };
+  }
+
+  return {
+    label: 'No action needed',
+    detail: 'This packet is already complete.',
+    helper: `Completed route: ${route}.`,
+  };
+}
+
 export function getDriverLeaderboard(packages) {
   const byDriver = new Map();
 
@@ -87,6 +145,7 @@ export function getDriverActionQueue(packages) {
   return packages
     .map((pkg) => {
       const ageHours = Math.max(0, (Date.now() - new Date(pkg.updatedAt || pkg.createdAt || Date.now()).getTime()) / (1000 * 60 * 60));
+      const nextStep = getDriverNextStep(pkg);
       const priority =
         pkg.status === 'lost'
           ? 'critical'
@@ -123,6 +182,11 @@ export function getDriverActionQueue(packages) {
         packageId: pkg.packageId || 'Legacy record',
         title,
         detail,
+        nextStepLabel: nextStep.label,
+        nextStepDetail: nextStep.detail,
+        helper: nextStep.helper,
+        amount: pkg.amount ?? pkg.weight ?? '—',
+        truckId: pkg.truckId || 'No truck',
         priority,
         route: `${pkg.pickupLocation || 'Origin'} -> ${pkg.dropoffLocation || 'Destination'}`,
         updatedAtLabel: formatRelativeTime(pkg.updatedAt || pkg.createdAt),

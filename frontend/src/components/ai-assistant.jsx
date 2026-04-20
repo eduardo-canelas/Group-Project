@@ -26,6 +26,8 @@ function buildAssistantReply(briefing) {
     summary: briefing.executiveSummary || briefing.narrative || briefing.operationalPulse,
     bullets,
     footer,
+    riskPackages: briefing.riskPackages || [],
+    recommendations: briefing.recommendations || [],
   };
 }
 
@@ -36,6 +38,9 @@ export default function AIAssistant({
   suggestions,
   perspective,
   className = '',
+  onJumpToWorkspace,
+  onFocusPackage,
+  onUseFollowUp,
 }) {
   const [prompt, setPrompt] = useState('');
   const [briefing, setBriefing] = useState(null);
@@ -191,6 +196,42 @@ export default function AIAssistant({
                     {reply.bullets.map((item) => (
                       <p key={item} className="briefing-chat-bullet">{item}</p>
                     ))}
+                  </div>
+                ) : null}
+
+                {(reply.riskPackages.length || reply.recommendations.length || onJumpToWorkspace) ? (
+                  <div className="briefing-chat-actions" aria-label="Driver helper actions">
+                    {reply.riskPackages.slice(0, 2).map((item) => (
+                      <button
+                        key={item.packageId}
+                        type="button"
+                        className="briefing-chat-action"
+                        onClick={() => onFocusPackage?.(item.packageId)}
+                      >
+                        Check {item.packageId}
+                      </button>
+                    ))}
+
+                    {reply.recommendations.slice(0, 1).map((item) => (
+                      <button
+                        key={item.title}
+                        type="button"
+                        className="briefing-chat-action"
+                        onClick={() => onUseFollowUp?.(item.title)}
+                      >
+                        Ask about: {item.title}
+                      </button>
+                    ))}
+
+                    {onJumpToWorkspace ? (
+                      <button
+                        type="button"
+                        className="briefing-chat-action briefing-chat-action-accent"
+                        onClick={onJumpToWorkspace}
+                      >
+                        Open update workspace
+                      </button>
+                    ) : null}
                   </div>
                 ) : null}
 

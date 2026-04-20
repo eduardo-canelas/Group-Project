@@ -49,13 +49,13 @@ export function PageFrame({ children, className = '' }) {
   return <div className={`mx-auto w-full max-w-[1600px] 2xl:max-w-[92vw] px-4 py-6 sm:px-6 lg:px-8 lg:py-10 ${className}`}>{children}</div>;
 }
 
-export function GlassCard({ children, className = '' }) {
-  return <section className={`surface-card ${className}`.trim()}>{children}</section>;
-}
+export const GlassCard = React.forwardRef(function GlassCard({ children, className = '', ...props }, ref) {
+  return <section ref={ref} className={`surface-card ${className}`.trim()} {...props}>{children}</section>;
+});
 
-export function SurfacePanel({ children, className = '' }) {
-  return <div className={`surface-panel ${className}`.trim()}>{children}</div>;
-}
+export const SurfacePanel = React.forwardRef(function SurfacePanel({ children, className = '', ...props }, ref) {
+  return <div ref={ref} className={`surface-panel ${className}`.trim()} {...props}>{children}</div>;
+});
 
 export function SectionKicker({ children }) {
   return <p className="section-kicker">{children}</p>;

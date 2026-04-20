@@ -1,9 +1,8 @@
-import React, { startTransition, useDeferredValue, useEffect, useMemo, useState } from 'react';
+import React, { startTransition, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AIAssistant from '../components/ai-assistant';
 import { usePageMotion } from '../components/motion';
 import {
-  CustodyTimeline,
   LogisticsFlowBoard,
   RouteProgressStrip,
 } from '../components/operations-showcase';
@@ -11,8 +10,6 @@ import {
   Alert,
   AppShell,
   EmptyState,
-  Field,
-  FilterPill,
   GhostChip,
   GlassCard,
   PageFrame,
@@ -21,20 +18,17 @@ import {
   SearchInput,
   SecondaryButton,
   SectionHeading,
-  SelectInput,
   StatusBadge,
   SurfacePanel,
-  TextInput,
 } from '../components/ui';
 import { clearStoredUser, getStoredUser } from '../lib/auth';
 import api from '../lib/api';
 import {
   formatStatusLabel,
+  getDriverNextStep,
   getDriverActionQueue,
   getPriorityPackages,
-  getSuggestedStatuses,
 } from '../lib/packageInsights';
-import { createPackageForm, deliveryTypeOptions, mapPackageToForm, statusOptions } from '../lib/packageFields';
 
 const DRIVER_AI_SUGGESTIONS = [
   'Summarize shift',
@@ -62,6 +56,12 @@ const statusSearchAliases = {
   returned: ['returned', 'return', 'exception', 'attention'],
   lost: ['lost', 'missing', 'exception', 'attention'],
   cancelled: ['cancelled', 'canceled', 'void', 'attention'],
+};
+
+const driverStatusActions = {
+  pending: ['picked_up'],
+  picked_up: ['in_transit', 'delivered'],
+  in_transit: ['delivered'],
 };
 
 function normalizeLookupValue(value) {
@@ -203,17 +203,8 @@ const timestampFormatter = new Intl.DateTimeFormat('en-US', {
   minute: '2-digit',
 });
 
-function buildPayload(formData) {
-  return {
-    packageId: formData.packageId,
-    description: formData.description,
-    amount: formData.amount,
-    deliveryType: formData.deliveryType,
-    truckId: formData.truckId,
-    pickupLocation: formData.pickupLocation,
-    dropoffLocation: formData.dropoffLocation,
-    status: formData.status,
-  };
+function getDriverStatusActions(status) {
+  return driverStatusActions[status] || [];
 }
 
 function buildDriverFlowLanes(packages) {
@@ -247,78 +238,82 @@ function formatTimestamp(value) {
   return Number.isNaN(date.getTime()) ? 'No scan yet' : timestampFormatter.format(date);
 }
 
-function DriverLoadLedger({ packages = [], loadingId, onUpdateStatus, onEdit, onDelete }) {
+function DriverLoadLedger({ packages = [], loadingId, onUpdateStatus, focusedPackageId }) {
   if (!packages.length) {
     return <EmptyState title="No active loads on manifest" />;
   }
 
   return (
     <div className="grid gap-3">
-      {packages.map((pkg) => (
-        <SurfacePanel key={pkg._id} className="motion-card">
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(13rem,auto)]">
-            <div className="grid gap-3 min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-lg font-semibold text-[color:var(--text)]">{pkg.packageId || 'Legacy record'}</p>
-                <StatusBadge status={pkg.status} />
-                <GhostChip>{pkg.truckId || 'No truck'}</GhostChip>
-                <GhostChip>{pkg.deliveryType || 'store'}</GhostChip>
-              </div>
+      {packages.map((pkg) => {
+        const nextStep = getDriverNextStep(pkg);
 
-              <p className="text-sm leading-6 text-[color:var(--muted)]">{pkg.description}</p>
+        return (
+          <SurfacePanel
+            key={pkg._id}
+            id={`driver-load-${pkg._id}`}
+            className={`motion-card driver-load-card ${focusedPackageId === pkg._id ? 'is-focused' : ''}`.trim()}
+          >
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(13rem,auto)]">
+              <div className="grid gap-3 min-w-0">
+                <div className="driver-load-topline">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-xl font-semibold text-[color:var(--text)]">{pkg.packageId || 'Legacy record'}</p>
+                      <StatusBadge status={pkg.status} />
+                      {isStalePackage(pkg) ? <GhostChip className="load-board-flag-chip">Needs scan</GhostChip> : null}
+                    </div>
+                    <p className="mt-1 text-sm text-[color:var(--muted)]">{pkg.description || 'Packet assigned to this shift.'}</p>
+                  </div>
 
-              <RouteProgressStrip
-                pickup={pkg.pickupLocation || 'Pickup'}
-                truckId={pkg.truckId || 'Truck pending'}
-                dropoff={pkg.dropoffLocation || 'Drop-off'}
-                status={pkg.status}
-              />
-
-              <div className="grid gap-2 text-sm text-[color:var(--muted)] sm:grid-cols-2 xl:grid-cols-4">
-                <p>Amount: {pkg.amount ?? pkg.weight ?? '—'}</p>
-                <p>Pickup: {pkg.pickupLocation || '—'}</p>
-                <p>Drop-off: {pkg.dropoffLocation || '—'}</p>
-                <p>Last update: {formatTimestamp(pkg.updatedAt || pkg.createdAt)}</p>
-              </div>
-
-              {getSuggestedStatuses(pkg.status).length ? (
-                <div className="flex flex-wrap gap-2">
-                  {getSuggestedStatuses(pkg.status).map((nextStatus) => (
-                    <FilterPill
-                      key={`${pkg._id}-${nextStatus}`}
-                      className="text-[0.68rem]"
-                      onClick={() => onUpdateStatus(pkg._id, nextStatus)}
-                      active={false}
-                      disabled={loadingId === pkg._id}
-                    >
-                      Mark {formatStatusLabel(nextStatus)}
-                    </FilterPill>
-                  ))}
+                  <div className="driver-load-chip-row">
+                    <GhostChip>{pkg.truckId || 'No truck'}</GhostChip>
+                    <GhostChip>{pkg.deliveryType || 'store'}</GhostChip>
+                    <GhostChip>{pkg.amount ?? pkg.weight ?? '—'} units</GhostChip>
+                  </div>
                 </div>
-              ) : null}
-            </div>
 
-            <div className="driver-load-actions grid gap-3">
-              <SelectInput
-                value={pkg.status}
-                disabled={loadingId === pkg._id}
-                onChange={(event) => onUpdateStatus(pkg._id, event.target.value)}
-              >
-                {statusOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </SelectInput>
+                <div className="driver-load-callout">
+                  <p className="driver-load-callout-label">Next step</p>
+                  <p className="driver-load-callout-title">{nextStep.label}</p>
+                  <p className="driver-load-callout-copy">{nextStep.detail}</p>
+                </div>
 
-              <div className="driver-load-btn-row flex gap-3">
-                <SecondaryButton type="button" className="flex-1" onClick={() => onEdit(pkg)}>Edit</SecondaryButton>
-                <SecondaryButton type="button" tone="danger" className="flex-1" onClick={() => onDelete(pkg._id)}>Delete</SecondaryButton>
+                <RouteProgressStrip
+                  pickup={pkg.pickupLocation || 'Pickup'}
+                  truckId={pkg.truckId || 'Truck pending'}
+                  dropoff={pkg.dropoffLocation || 'Drop-off'}
+                  status={pkg.status}
+                />
+
+                <div className="driver-load-meta-grid">
+                  <p><span>Packet</span>{pkg.packageId || 'Legacy record'}</p>
+                  <p><span>Quantity</span>{pkg.amount ?? pkg.weight ?? '—'} units</p>
+                  <p><span>Route</span>{`${pkg.pickupLocation || 'Pickup'} -> ${pkg.dropoffLocation || 'Drop-off'}`}</p>
+                  <p><span>Last update</span>{formatTimestamp(pkg.updatedAt || pkg.createdAt)}</p>
+                </div>
+
+                {getDriverStatusActions(pkg.status).length ? (
+                  <div className="flex flex-wrap gap-2">
+                    {getDriverStatusActions(pkg.status).map((nextStatus) => (
+                      <PrimaryButton
+                        key={`${pkg._id}-${nextStatus}`}
+                        className="driver-load-status-action"
+                        onClick={() => onUpdateStatus(pkg._id, nextStatus)}
+                        disabled={loadingId === pkg._id}
+                      >
+                        Mark {formatStatusLabel(nextStatus)}
+                      </PrimaryButton>
+                    ))}
+                  </div>
+                ) : (
+                  <GhostChip>Driver updates complete</GhostChip>
+                )}
               </div>
             </div>
-          </div>
-        </SurfacePanel>
-      ))}
+          </SurfacePanel>
+        );
+      })}
     </div>
   );
 }
@@ -357,15 +352,49 @@ function DriverPriorityStack({ packages = [] }) {
   );
 }
 
-function DriverActionCenter({ items = [], checklist = [] }) {
+function DriverActionCenter({ items = [], checklist = [], onFocusPacket, onJumpToWorkspace }) {
   return (
     <div className="grid gap-6">
-      <CustodyTimeline
-        title="Next Actions"
-        description="Immediate tasks to clear first."
-        items={items}
-        compact
-      />
+      <div className="grid gap-3">
+        <SectionHeading
+          title="Next Actions"
+          description="Immediate tasks to clear first."
+          action={onJumpToWorkspace ? (
+            <SecondaryButton type="button" onClick={onJumpToWorkspace}>Open update workspace</SecondaryButton>
+          ) : null}
+        />
+
+        {items.length ? (
+          <div className="driver-action-list">
+            {items.map((item, index) => (
+              <button
+                key={item.id}
+                type="button"
+                className={`driver-action-card motion-card driver-action-${item.priority}`.trim()}
+                onClick={() => onFocusPacket?.(item.id)}
+              >
+                <div className="driver-action-card-topline">
+                  <span className="showcase-timeline-index">{String(index + 1).padStart(2, '0')}</span>
+                  <GhostChip>{item.priority}</GhostChip>
+                </div>
+
+                <div className="grid gap-2 text-left">
+                  <p className="driver-action-card-title">{item.packageId} • {item.nextStepLabel}</p>
+                  <p className="driver-action-card-copy">{item.nextStepDetail}</p>
+                </div>
+
+                <div className="driver-action-card-meta">
+                  <p>{item.route}</p>
+                  <p>{item.amount} units • {item.truckId}</p>
+                  <p>{item.updatedAtLabel}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <EmptyState title="No urgent actions" description="Your queue is clear right now." />
+        )}
+      </div>
 
       <div className="driver-inline-section">
         <SectionHeading
@@ -394,7 +423,7 @@ function DriverBoardSearchResults({
   search = '',
   statusFilter = 'all',
   hasInteracted = false,
-  onEdit,
+  onOpen,
   onUpdateStatus,
   loadingId = '',
 }) {
@@ -468,13 +497,13 @@ function DriverBoardSearchResults({
             </div>
 
             <div className="load-board-result-actions">
-              <SecondaryButton type="button" className="load-board-result-edit" onClick={() => onEdit?.(pkg)}>
+              <SecondaryButton type="button" className="load-board-result-edit" onClick={() => onOpen?.(pkg)}>
                 Open load
               </SecondaryButton>
 
-              {getSuggestedStatuses(pkg.status).length ? (
+              {getDriverStatusActions(pkg.status).length ? (
                 <div className="load-board-result-status-row">
-                  {getSuggestedStatuses(pkg.status).slice(0, 2).map((nextStatus) => (
+                  {getDriverStatusActions(pkg.status).slice(0, 2).map((nextStatus) => (
                     <PrimaryButton
                       key={`${pkg._id}-${nextStatus}`}
                       className="py-2 px-4 text-xs font-bold"
@@ -496,15 +525,16 @@ function DriverBoardSearchResults({
 
 function DriverDashboard() {
   const [packages, setPackages] = useState([]);
-  const [formData, setFormData] = useState(createPackageForm());
-  const [editingId, setEditingId] = useState('');
   const [error, setError] = useState('');
   const [loadingId, setLoadingId] = useState('');
   const [loadBoardSearch, setLoadBoardSearch] = useState('');
   const [loadBoardStatusFilter, setLoadBoardStatusFilter] = useState('all');
   const [hasTouchedLoadBoardSearch, setHasTouchedLoadBoardSearch] = useState(false);
+  const [focusedPackageId, setFocusedPackageId] = useState('');
   const navigate = useNavigate();
   const scope = usePageMotion();
+  const updateWorkspaceRef = useRef(null);
+  const loadBoardRef = useRef(null);
   const deferredLoadBoardSearch = useDeferredValue(loadBoardSearch);
   const currentUser = getStoredUser();
 
@@ -521,42 +551,9 @@ function DriverDashboard() {
     void fetchPackages();
   }, []);
 
-  const updateField = (field) => (event) => {
-    setFormData((current) => ({
-      ...current,
-      [field]: event.target.value,
-    }));
-  };
-
-  const resetForm = () => {
-    setEditingId('');
-    setFormData(createPackageForm());
-  };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setError('');
-
-    try {
-      const payload = buildPayload(formData);
-
-      if (editingId) {
-        await api.put(`/packages/${editingId}`, payload);
-      } else {
-        await api.post('/packages', payload);
-      }
-
-      resetForm();
-      await fetchPackages();
-    } catch (requestError) {
-      setError(requestError.response?.data?.error || requestError.response?.data?.message || 'Could not save package.');
-    }
-  };
-
   const handleEdit = (pkg) => {
-    setEditingId(pkg._id);
-    setFormData(mapPackageToForm(pkg));
-    document.getElementById('driver-shipment-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setFocusedPackageId(pkg._id);
+    focusPackage(pkg._id);
   };
 
   const handleUpdateStatus = async (id, status) => {
@@ -570,20 +567,6 @@ function DriverDashboard() {
       setError(requestError.response?.data?.error || requestError.response?.data?.message || 'Could not update status.');
     } finally {
       setLoadingId('');
-    }
-  };
-
-  const handleDelete = async (id) => {
-    setError('');
-
-    try {
-      await api.delete(`/packages/${id}`);
-      if (editingId === id) {
-        resetForm();
-      }
-      await fetchPackages();
-    } catch (requestError) {
-      setError(requestError.response?.data?.error || requestError.response?.data?.message || 'Could not delete package.');
     }
   };
 
@@ -651,16 +634,6 @@ function DriverDashboard() {
     () => loadBoardSearchScopedPackages.filter((pkg) => matchesDriverBoardFilter(pkg, 'attention')).length,
     [loadBoardSearchScopedPackages],
   );
-  const filterOptions = useMemo(
-    () => ([
-      { value: 'all', label: 'All loads', count: loadBoardSearchScopedPackages.length },
-      { value: 'attention', label: 'Needs attention', count: attentionSearchScopedCount },
-      { value: 'moving', label: 'Moving', count: movingSearchScopedCount },
-      { value: 'stale', label: 'Stale', count: staleSearchScopedCount },
-      { value: 'delivered', label: 'Delivered', count: deliveredSearchScopedCount },
-    ].filter((item) => item.value === 'all' || item.count > 0)),
-    [loadBoardSearchScopedPackages.length, attentionSearchScopedCount, movingSearchScopedCount, staleSearchScopedCount, deliveredSearchScopedCount],
-  );
   const loadBoardStats = useMemo(
     () => [
       { status: 'attention', label: 'Needs attention', count: attentionSearchScopedCount },
@@ -681,6 +654,41 @@ function DriverDashboard() {
     [packages.length, priorityPackages.length, deliveredCount],
   );
 
+  const scrollToUpdateWorkspace = () => {
+    updateWorkspaceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const focusPackage = (packageKey) => {
+    if (!packageKey) {
+      scrollToUpdateWorkspace();
+      return;
+    }
+
+    const matched = packages.find((pkg) => pkg._id === packageKey || pkg.packageId === packageKey);
+    if (!matched) {
+      scrollToUpdateWorkspace();
+      return;
+    }
+
+    setFocusedPackageId(matched._id);
+    scrollToUpdateWorkspace();
+    window.setTimeout(() => {
+      document.getElementById(`driver-load-${matched._id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 140);
+  };
+
+  const useFollowUpPrompt = (promptText) => {
+    loadBoardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    window.setTimeout(() => {
+      const promptArea = document.querySelector('.briefing-chat-textarea');
+      if (promptArea instanceof HTMLTextAreaElement) {
+        promptArea.value = promptText;
+        promptArea.dispatchEvent(new Event('input', { bubbles: true }));
+        promptArea.focus();
+      }
+    }, 140);
+  };
+
   return (
     <AppShell
       headerActions={<SecondaryButton type="button" onClick={handleLogout}>Log Out</SecondaryButton>}
@@ -688,43 +696,46 @@ function DriverDashboard() {
     >
       <PageFrame className="dashboard-frame">
         <div ref={scope} className="space-y-5 sm:space-y-6">
-          <div className="motion-hero grid gap-5">
-            <PageTitle
-              kicker="Driver Dashboard"
-              title="Route Command"
-              action={(
-                <div className="flex flex-wrap justify-start gap-2 lg:justify-end">
-                  <GhostChip className="shift-status-pill motion-chip">
-                    <span className="shift-status-pill-dot" aria-hidden="true" />
-                    <span>{currentUser?.username || 'driver'} live shift</span>
-                  </GhostChip>
-                </div>
-              )}
-            />
-
-            <AIAssistant
-              className="dashboard-ai-assistant ai-top-panel p-5 sm:p-6"
-              title="Ask RoutePulse"
-              suggestions={DRIVER_AI_SUGGESTIONS}
-              perspective="driver"
-            />
-          </div>
+          <PageTitle
+            kicker="Driver Dashboard"
+            title="Route Command"
+            description="Make the next packet move obvious: see what it is, where it goes, what quantity is assigned, and what action comes next."
+            action={(
+              <div className="flex flex-wrap justify-start gap-2 lg:justify-end">
+                <GhostChip className="shift-status-pill motion-chip">
+                  <span className="shift-status-pill-dot" aria-hidden="true" />
+                  <span>{currentUser?.username || 'driver'} live shift</span>
+                </GhostChip>
+              </div>
+            )}
+          />
 
           {error ? <Alert tone="error">{error}</Alert> : null}
 
           <div className="dashboard-main-grid dashboard-main-grid-driver">
             <div className="dashboard-stack order-2 lg:order-1">
-              <GlassCard className="motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-update">
+              <AIAssistant
+                className="dashboard-ai-assistant ai-top-panel p-5 sm:p-6"
+                title="Ask RoutePulse"
+                description="Ask what to do next, then jump straight into the packet that needs your update."
+                suggestions={DRIVER_AI_SUGGESTIONS}
+                perspective="driver"
+                onJumpToWorkspace={scrollToUpdateWorkspace}
+                onFocusPackage={focusPackage}
+                onUseFollowUp={useFollowUpPrompt}
+              />
+
+              <GlassCard ref={updateWorkspaceRef} className="motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-update">
                 <SectionHeading
                   kicker="Assigned Loads"
                   title="Update Workspace"
-                  description="Status, route, and priority in one editing surface."
+                  description="Update packet status with the route, quantity, and next step all in one place."
                 />
 
                 <div className="driver-inline-section driver-inline-section-no-divider">
                   <SectionHeading
-                    title="Shipment Updates"
-                    description="Status, route, and edit controls for your route."
+                    title="Packet Updates"
+                    description="Each card shows the packet, its quantity, its route, and the exact next move."
                     action={<GhostChip>{packages.length} shown</GhostChip>}
                     as="h3"
                     titleClassName="text-xl sm:text-2xl"
@@ -732,32 +743,31 @@ function DriverDashboard() {
                 </div>
 
                 <div className="dashboard-scroll-region dashboard-scroll-region-update dashboard-scroll-fill">
-                <div className="mt-5">
-                  <DriverLoadLedger
-                    packages={packages}
-                    loadingId={loadingId}
-                    onUpdateStatus={handleUpdateStatus}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                  />
-                </div>
-
-                <div className="driver-inline-section">
-                  <SectionHeading
-                    kicker="Priority"
-                    title="Needs Attention"
-                    description="Loads that should be updated before the rest."
-                    action={<GhostChip>{priorityPackages.length} active</GhostChip>}
-                  />
-
                   <div className="mt-5">
-                    <DriverPriorityStack packages={priorityPackages} />
+                    <DriverLoadLedger
+                      packages={packages}
+                      loadingId={loadingId}
+                      onUpdateStatus={handleUpdateStatus}
+                      focusedPackageId={focusedPackageId}
+                    />
                   </div>
-                </div>
+
+                  <div className="driver-inline-section">
+                    <SectionHeading
+                      kicker="Priority"
+                      title="Needs Attention"
+                      description="Loads that should be updated before the rest."
+                      action={<GhostChip>{priorityPackages.length} active</GhostChip>}
+                    />
+
+                    <div className="mt-5">
+                      <DriverPriorityStack packages={priorityPackages} />
+                    </div>
+                  </div>
                 </div>
               </GlassCard>
 
-              <GlassCard className="hero-panel motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-primary load-board-panel">
+              <GlassCard ref={loadBoardRef} className="hero-panel motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-primary load-board-panel">
                 <SectionHeading
                   title="Load Board"
                   description="Track every assigned load in one place."
@@ -831,7 +841,7 @@ function DriverDashboard() {
                           search={loadBoardSearch}
                           statusFilter={loadBoardStatusFilter}
                           hasInteracted={hasTouchedLoadBoardSearch}
-                          onEdit={handleEdit}
+                          onOpen={handleEdit}
                           onUpdateStatus={handleUpdateStatus}
                           loadingId={loadingId}
                         />
@@ -844,78 +854,11 @@ function DriverDashboard() {
             </div>
 
             <div className="dashboard-stack order-1 lg:order-2">
-              <GlassCard className="motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-update">
-                <SectionHeading
-                  kicker={editingId ? 'Edit Load' : 'Quick Entry'}
-                  title={editingId ? 'Update Load' : 'Create Load'}
-                  description="Add a shipment record without leaving the dashboard."
-                />
-
-                <form id="driver-shipment-form" className="mt-5 space-y-4 pb-4" onSubmit={handleSubmit}>
-                  <Field label="Package ID">
-                    <TextInput name="package_id" type="text" value={formData.packageId} onChange={updateField('packageId')} placeholder="PKG-3021" required autoComplete="off" spellCheck={false} />
-                  </Field>
-
-                  <Field label="Description">
-                    <TextInput name="description" type="text" value={formData.description} onChange={updateField('description')} placeholder="Retail order, refill pallet, return shipment…" required autoComplete="off" />
-                  </Field>
-
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label="Quantity">
-                      <TextInput name="amount" type="number" min="0" step="1" value={formData.amount} onChange={updateField('amount')} required />
-                    </Field>
-
-                    <Field label="Truck ID">
-                      <TextInput name="truck_id" type="text" value={formData.truckId} onChange={updateField('truckId')} placeholder="TRK-09" required autoComplete="off" spellCheck={false} />
-                    </Field>
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label="Pickup location">
-                      <TextInput name="pickup_location" type="text" value={formData.pickupLocation} onChange={updateField('pickupLocation')} placeholder="Warehouse A" autoComplete="off" />
-                    </Field>
-
-                    <Field label="Drop-off location">
-                      <TextInput name="dropoff_location" type="text" value={formData.dropoffLocation} onChange={updateField('dropoffLocation')} placeholder="Storefront B" required autoComplete="off" />
-                    </Field>
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label="Delivery type">
-                      <SelectInput name="delivery_type" value={formData.deliveryType} onChange={updateField('deliveryType')}>
-                        {deliveryTypeOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </SelectInput>
-                    </Field>
-
-                    <Field label="Status">
-                      <SelectInput name="status" value={formData.status} onChange={updateField('status')}>
-                        {statusOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </SelectInput>
-                    </Field>
-                  </div>
-
-                  <div className="flex flex-wrap gap-3">
-                    <PrimaryButton type="submit" className="flex-1">
-                      {editingId ? 'Save Load' : 'Create Load'}
-                    </PrimaryButton>
-                    {editingId ? <SecondaryButton type="button" onClick={resetForm}>Cancel Edit</SecondaryButton> : null}
-                  </div>
-                </form>
-              </GlassCard>
-
               <GlassCard className="shift-guide-card motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-primary driver-support-panel">
                 <SectionHeading
                   kicker="Driver Support"
                   title="Action Center"
-                  description="Immediate tasks and end-of-shift checks."
+                  description="Tap an action to jump to the packet that needs work."
                 />
 
                 <div className="mt-5 grid gap-4 flex-1 min-h-0">
@@ -924,12 +867,13 @@ function DriverDashboard() {
                       <DriverActionCenter
                         items={actionQueue}
                         checklist={shiftGuide}
+                        onFocusPacket={focusPackage}
+                        onJumpToWorkspace={scrollToUpdateWorkspace}
                       />
                     </div>
                   </SurfacePanel>
                 </div>
               </GlassCard>
-
               <GlassCard className="motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-ledger lg:hidden">
                 <div className="dashboard-scroll-region dashboard-scroll-region-flow dashboard-scroll-fill">
                   <LogisticsFlowBoard
