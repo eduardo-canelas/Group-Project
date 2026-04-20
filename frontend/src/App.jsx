@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 //Load react router
-import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 //Load pages
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -38,10 +38,23 @@ function RequireRole({ role, children }) {
   return children;
 }
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [pathname]);
+
+  return null;
+}
+
 function App() {
   return (
     <ThemeProvider>
       <Router>
+        <ScrollToTop />
         <Routes>
           <Route
             path="/"
