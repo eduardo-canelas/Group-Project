@@ -39,7 +39,6 @@ function Login() {
                   as="h1"
                   kicker="Secure entry"
                   title="Enter RoutePulse"
-                  description="Secure access for dispatchers and drivers, with the live product preview still visible on mobile."
                 />
               </div>
 
@@ -69,8 +68,7 @@ function Login() {
                 <PrimaryButton type="submit" className="w-full">Enter workspace</PrimaryButton>
               </form>
 
-              <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--border)] pt-6">
-                <p className="text-sm text-[color:var(--muted)]">Need a new account for a dispatcher or driver?</p>
+              <div className="mt-6 flex flex-wrap items-center justify-end gap-3 border-t border-[color:var(--border)] pt-6">
                 <Link to="/register">
                   <SecondaryButton type="button">Create account</SecondaryButton>
                 </Link>

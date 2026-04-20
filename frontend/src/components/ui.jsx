@@ -25,7 +25,7 @@ export function AppShell({ children, className = '', headerActions = null, heade
   return (
     <div className={`app-shell ${className}`.trim()}>
       <header className={`app-header relative z-10 px-4 pt-4 sm:px-6 lg:px-8 lg:pt-6 ${headerClassName}`.trim()}>
-        <div className="app-header-row mx-auto w-full max-w-7xl">
+        <div className="app-header-row mx-auto w-full max-w-[1600px] 2xl:max-w-[92vw]">
           <div className="brand-lockup">
             <img
               src="/routepulse-logo.png"
@@ -46,7 +46,7 @@ export function AppShell({ children, className = '', headerActions = null, heade
 }
 
 export function PageFrame({ children, className = '' }) {
-  return <div className={`mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8 ${className}`}>{children}</div>;
+  return <div className={`mx-auto w-full max-w-[1600px] 2xl:max-w-[92vw] px-4 py-6 sm:px-6 lg:px-8 lg:py-10 ${className}`}>{children}</div>;
 }
 
 export function GlassCard({ children, className = '' }) {
@@ -224,7 +224,7 @@ export function Alert({ children, tone = 'error' }) {
 
 export function StatusBadge({ status }) {
   return (
-    <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold tracking-wide ${statusStyles[status] ?? 'border-white/10 bg-white/5 text-slate-200'}`}>
+    <span className={`inline-flex shrink-0 whitespace-nowrap items-center rounded-full border px-3 py-1 text-xs font-semibold tracking-wide ${statusStyles[status] ?? 'border-white/10 bg-white/5 text-slate-200'}`}>
       {statusLabels[status] ?? status}
     </span>
   );

@@ -4,14 +4,6 @@ import { useGSAP } from '@gsap/react';
 import { Alert, GhostChip, GlassCard, PrimaryButton, SecondaryButton, SectionHeading, TextArea } from './ui';
 import api from '../lib/api';
 
-function formatWarning(message) {
-  if (!message) {
-    return '';
-  }
-
-  return `Live fallback mode: ${message}`;
-}
-
 function buildAssistantReply(briefing) {
   if (!briefing) {
     return null;
@@ -172,8 +164,6 @@ export default function AIAssistant({
           ) : null}
 
           {error ? <Alert tone="error">{error}</Alert> : null}
-          {meta?.warning ? <Alert tone="info">{formatWarning(meta.warning)}</Alert> : null}
-
           {!briefing && !loading ? (
             <div className="briefing-chat-empty">
               <p>AI assistant is ready for a quick question.</p>

@@ -17,21 +17,41 @@ const statusWeights = {
 
 const fallbackActionTemplates = [
     {
-        title: "Stabilize exceptions first",
-        detail: "Start with shipments already marked lost, returned, or cancelled before those records spill into customer escalations.",
+        title: "Check flagged packages first",
+        detail: "Start with packages already marked lost, returned, or cancelled before they turn into customer problems.",
         priority: "critical",
     },
     {
-        title: "Tighten route follow-up",
-        detail: "Check the busiest live lanes and confirm truck assignments, facility handoffs, and next scans before the next dispatch cycle.",
+        title: "Confirm the next scan",
+        detail: "Check the busiest active routes and confirm the truck, handoff, and next scan are correct.",
         priority: "high",
     },
     {
-        title: "Refresh leadership reporting",
-        detail: "Share a short operational note that pairs shipment volume with risk concentration, route pressure, and the most recent handling events.",
+        title: "Give a short handoff note",
+        detail: "Share what is delayed, what is missing, and what the next driver or dispatcher needs to know.",
         priority: "medium",
     },
 ];
+
+const DRIVER_SYSTEM_PROMPT =
+    "You are RoutePulse Driver AI. Your job is to help drivers stop packages from getting lost. " +
+    "Write in very simple language. Use short sentences. Use plain words instead of business language. " +
+    "Focus on real driver actions: check the label, confirm the truck, confirm pickup and drop-off, scan the package again, call dispatch, and flag missing or mismatched records fast. " +
+    "Never sound like a leadership report. Never use vague phrases like operational signal, route pressure, executive summary, intervention, or escalation unless the data clearly requires it. " +
+    "When a package may be lost, tell the driver exactly what to do next in order. " +
+    "Keep the response grounded only in the provided backend state. Do not invent data. Preserve package IDs, counts, routes, and statuses exactly. " +
+    "Return strict JSON only with keys headline, executiveSummary, narrative, operationalPulse, metrics, riskPackages, routeAlerts, facilityAlerts, driverAlerts, recommendations, recentEvents. " +
+    "For driver responses: headline must be one short sentence, executiveSummary must be 1 to 2 short sentences, narrative must explain the main issue in simple terms, operationalPulse must be a short support line, and recommendations must be 3 short action objects with clear titles and simple details.";
+
+const ADMIN_SYSTEM_PROMPT =
+    "You are RoutePulse Admin AI, a logistics operations analyst embedded in a package tracking platform. " +
+    "Return strict JSON only, with no markdown fences. Keep the response grounded only in the provided backend state. " +
+    "Write like a polished dispatch briefing: specific, concise, and decision-ready. " +
+    "Do not invent data. Preserve provided counts and identifiers exactly. " +
+    "Return an object with keys headline, executiveSummary, narrative, operationalPulse, metrics, riskPackages, routeAlerts, facilityAlerts, driverAlerts, recommendations, recentEvents. " +
+    "metrics must be an array of 4 objects: {label, value, context, tone}. " +
+    "riskPackages, routeAlerts, facilityAlerts, driverAlerts, and recentEvents should keep the provided objects but may tighten reason/summary wording. " +
+    "recommendations must be 3 concise action objects: {title, detail, priority}.";
 
 function formatStatusLabel(status = "unknown") {
     return status
@@ -277,17 +297,49 @@ function buildLocalBriefing(prompt, perspective, context) {
     const recommendations = [...fallbackActionTemplates];
     if (packageInsights.rankedPackages[0]) {
         recommendations[0] = {
-            title: `Escalate ${packageInsights.rankedPackages[0].packageId} first`,
-            detail: packageInsights.rankedPackages[0].reason,
+            title: perspective === "driver"
+                ? `Check ${packageInsights.rankedPackages[0].packageId} now`
+                : `Escalate ${packageInsights.rankedPackages[0].packageId} first`,
+            detail: perspective === "driver"
+                ? `${formatStatusLabel(packageInsights.rankedPackages[0].status)}. Re-scan it, confirm the truck, and verify the drop-off.`
+                : packageInsights.rankedPackages[0].reason,
             priority: packageInsights.rankedPackages[0].severity === "critical" ? "critical" : "high",
         };
     }
 
     if (packageInsights.routePressure[0]) {
         recommendations[1] = {
-            title: `Review ${packageInsights.routePressure[0].route}`,
-            detail: packageInsights.routePressure[0].summary,
+            title: perspective === "driver"
+                ? `Review ${packageInsights.routePressure[0].route}`
+                : `Review ${packageInsights.routePressure[0].route}`,
+            detail: perspective === "driver"
+                ? `Make sure the route, truck, and next scan all match for this lane.`
+                : packageInsights.routePressure[0].summary,
             priority: packageInsights.routePressure[0].riskCount > 0 ? "high" : "medium",
+        };
+    }
+
+    if (perspective === "driver") {
+        return {
+            headline: packageInsights.rankedPackages[0]
+                ? `${packageInsights.rankedPackages[0].packageId} needs attention now`
+                : "Your route looks clear right now",
+            executiveSummary: packageInsights.rankedPackages[0]
+                ? `Start with the highest-risk package first. Check the scan, truck, and drop-off before moving on.`
+                : `No high-risk package is standing out right now. Keep scans current and confirm handoffs.`,
+            narrative: packageInsights.rankedPackages[0]
+                ? `${packageInsights.rankedPackages[0].packageId} is the main risk on your route. Lost and delayed packages usually come from a missing scan, wrong truck, or wrong stop.`
+                : "Nothing critical is standing out right now, but keeping scans current helps stop packages from going missing.",
+            operationalPulse: packageInsights.rankedPackages.length
+                ? `${packageInsights.rankedPackages.length} package${packageInsights.rankedPackages.length === 1 ? "" : "s"} on your route need closer attention.`
+                : "No risk packages are standing out right now.",
+            metrics: base.metrics,
+            riskPackages: packageInsights.rankedPackages,
+            routeAlerts: packageInsights.routePressure,
+            facilityAlerts: packageInsights.facilityPressure,
+            driverAlerts: packageInsights.driverPressure,
+            recommendations,
+            recentEvents: buildRecentEvents(recentEvents),
         };
     }
 
@@ -367,15 +419,7 @@ async function requestGeminiBriefing({ prompt, perspective, currentUser, context
                     systemInstruction: {
                         parts: [
                             {
-                                text:
-                                    "You are Pulse AI, an elite logistics operations analyst embedded in a package tracking platform. " +
-                                    "You must return strict JSON only, with no markdown fences. Keep the response grounded only in the provided backend state. " +
-                                    "Write like an executive operations briefing: specific, polished, visual, and decision-ready. " +
-                                    "Do not invent data. Preserve provided counts and identifiers exactly. " +
-                                    "Return an object with keys headline, executiveSummary, narrative, operationalPulse, metrics, riskPackages, routeAlerts, facilityAlerts, driverAlerts, recommendations, recentEvents. " +
-                                    "metrics must be an array of 4 objects: {label, value, context, tone}. " +
-                                    "riskPackages, routeAlerts, facilityAlerts, driverAlerts, and recentEvents should keep the provided objects but may tighten reason/summary wording. " +
-                                    "recommendations must be 3 concise action objects: {title, detail, priority}.",
+                                text: perspective === "driver" ? DRIVER_SYSTEM_PROMPT : ADMIN_SYSTEM_PROMPT,
                             },
                         ],
                     },

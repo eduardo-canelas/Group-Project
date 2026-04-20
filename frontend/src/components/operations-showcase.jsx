@@ -1,6 +1,16 @@
 import React from 'react';
 import { EmptyState, GhostChip, MetricCard, SectionHeading, StatusBadge, SurfacePanel } from './ui';
 
+const routeProgressByStatus = {
+  pending: 24,
+  picked_up: 44,
+  in_transit: 68,
+  delivered: 92,
+  returned: 38,
+  lost: 30,
+  cancelled: 20,
+};
+
 const toneClassNames = {
   critical: 'showcase-priority-critical',
   high: 'showcase-priority-high',
@@ -37,6 +47,30 @@ function PacketIcon({ className = '' }) {
       <path d="M12 3.5 20 7.5v9L12 20.5 4 16.5v-9L12 3.5Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
       <path d="M12 12.25 4.2 7.8M12 12.25l7.8-4.45M12 12.25v8.1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
+  );
+}
+
+function FreightTruckMarker({ className = '', packageCount = 2 }) {
+  return (
+    <span className={`freight-truck-marker ${className}`.trim()} aria-hidden="true">
+      <span className="freight-truck-packages">
+        {Array.from({ length: packageCount }).map((_, index) => (
+          <span
+            key={index}
+            className={`freight-truck-package freight-truck-package-${index + 1}`}
+          />
+        ))}
+      </span>
+      <span className="freight-truck-shell">
+        <span className="freight-truck-cargo">
+          <span className="freight-truck-door freight-truck-door-main" />
+          <span className="freight-truck-door freight-truck-door-inner" />
+        </span>
+        <span className="freight-truck-cab" />
+        <span className="freight-truck-wheel freight-truck-wheel-front" />
+        <span className="freight-truck-wheel freight-truck-wheel-rear" />
+      </span>
+    </span>
   );
 }
 
@@ -134,14 +168,8 @@ export function LogisticsFlowBoard({
 
                     <div className="logistics-track-line motion-flow-path">
                       <span className="logistics-track-progress" />
-                      <span className="logistics-track-packet logistics-track-packet-a">
-                        <PacketIcon className="h-4 w-4" />
-                      </span>
-                      <span className="logistics-track-packet logistics-track-packet-b">
-                        <PacketIcon className="h-4 w-4" />
-                      </span>
                       <span className="logistics-track-truck">
-                        <TruckIcon className="h-5 w-5" />
+                        <FreightTruckMarker packageCount={2} />
                       </span>
                     </div>
 
@@ -173,15 +201,18 @@ export function RouteProgressStrip({
   dropoff = 'Drop-off',
   status = 'pending',
 }) {
+  const truckProgress = routeProgressByStatus[status] ?? 40;
+
   return (
-    <div className={`route-progress-strip route-progress-${status}`}>
+    <div
+      className={`route-progress-strip route-progress-${status}`}
+      style={{ '--route-progress-position': `${truckProgress}%` }}
+    >
       <div className="route-progress-line motion-flow-path">
         <span className="route-progress-segment" />
-        <span className="route-progress-packet">
-          <PacketIcon className="h-4 w-4" />
-        </span>
+        <span className="route-progress-fill" />
         <span className="route-progress-truck">
-          <TruckIcon className="h-4 w-4" />
+          <FreightTruckMarker packageCount={1} className="freight-truck-marker-compact" />
         </span>
       </div>
       <div className="route-progress-points">
@@ -326,17 +357,18 @@ export function CustodyTimeline({ items = [], title, description, compact = fals
 export function WatchGrid({ title, description, items = [], metricLabel, valueKey, detailKey = 'summary' }) {
   return (
     <div>
-      <SectionHeading as="h3" title={title} description={description} />
+      <p className="section-kicker">{title}</p>
+      {description ? <p className="mt-2 text-sm text-[color:var(--muted)]">{description}</p> : null}
 
-      <div className="mt-5 grid gap-4">
+      <div className="mt-4 grid gap-3">
         {items.map((item) => (
           <SurfacePanel key={`${title}-${item.route || item.facility || item.driver}`} className="motion-card">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-lg font-semibold text-[color:var(--text)]">{item.route || item.facility || item.driver}</p>
-                <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">{item[detailKey]}</p>
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-[color:var(--text)]">{item.route || item.facility || item.driver}</p>
+                <p className="mt-0.5 truncate text-xs text-[color:var(--muted)]">{item[detailKey]}</p>
               </div>
-              <GhostChip>{item[valueKey]} {metricLabel}</GhostChip>
+              <GhostChip className="shrink-0">{item[valueKey]} {metricLabel}</GhostChip>
             </div>
           </SurfacePanel>
         ))}
