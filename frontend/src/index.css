@@ -1646,8 +1646,10 @@
   }
 
   .briefing-chat-action-accent {
-    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 16%, var(--surface)), var(--surface-muted));
-    border-color: color-mix(in srgb, var(--accent) 34%, var(--border));
+    background: var(--surface);
+    border-color: color-mix(in srgb, var(--accent-strong) 18%, var(--border));
+    color: var(--text);
+    box-shadow: var(--shadow);
   }
 
   .briefing-header {
