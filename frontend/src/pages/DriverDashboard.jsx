@@ -254,7 +254,7 @@ function DriverLoadLedger({ packages = [], loadingId, onUpdateStatus, focusedPac
             id={`driver-load-${pkg._id}`}
             className={`motion-card driver-load-card ${focusedPackageId === pkg._id ? 'is-focused' : ''}`.trim()}
           >
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(13rem,auto)]">
+            <div className="grid gap-4">
               <div className="grid gap-3 min-w-0">
                 <div className="driver-load-topline">
                   <div className="min-w-0">
@@ -360,7 +360,7 @@ function DriverActionCenter({ items = [], checklist = [], onFocusPacket, onJumpT
           title="Next Actions"
           description="Immediate tasks to clear first."
           action={onJumpToWorkspace ? (
-            <SecondaryButton type="button" onClick={onJumpToWorkspace}>Open update workspace</SecondaryButton>
+            <SecondaryButton type="button" className="driver-workspace-jump-button" onClick={onJumpToWorkspace}>Open update workspace</SecondaryButton>
           ) : null}
         />
 

@@ -1647,8 +1647,8 @@
 
   .briefing-chat-action-accent {
     background: var(--surface);
-    border-color: color-mix(in srgb, var(--accent-strong) 18%, var(--border));
-    color: var(--text);
+    border-color: #11766E;
+    color: #11766E;
     box-shadow: var(--shadow);
   }
 
@@ -2260,6 +2260,8 @@
     border-color: color-mix(in srgb, #0f766e 28%, var(--border));
   }
 
+
+
   .shift-guide-item {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
@@ -2314,7 +2316,7 @@
   }
 
   .dashboard-main-grid-driver {
-    grid-template-columns: minmax(0, 1.08fr) minmax(19rem, 0.92fr);
+    grid-template-columns: minmax(0, 1.22fr) minmax(18rem, 0.78fr);
     align-items: stretch;
   }
   .dashboard-main-grid-driver .dashboard-stack {
@@ -2334,6 +2336,12 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+}
+
+@media (min-width: 1280px) {
+  .dashboard-main-grid-driver {
+    grid-template-columns: minmax(0, 1.34fr) minmax(18rem, 0.66fr);
+  }
 }
 
 @media (min-width: 1024px) {
@@ -2926,6 +2934,21 @@
 .button-secondary {
   background: var(--surface);
   border-color: var(--border);
+}
+
+.button-secondary.driver-workspace-jump-button {
+  border-color: #11766E;
+  background: #11766E;
+  color: #ffffff;
+  box-shadow: 0 16px 32px -26px rgba(17, 118, 110, 0.55);
+}
+
+.button-secondary.driver-workspace-jump-button:hover,
+.button-secondary.driver-workspace-jump-button:active,
+.button-secondary.driver-workspace-jump-button:focus-visible {
+  border-color: #11766E;
+  background: #11766E;
+  color: #ffffff;
 }
 
 .button-secondary-danger {
