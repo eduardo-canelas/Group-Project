@@ -259,11 +259,13 @@ function DriverLoadLedger({ packages = [], loadingId, onUpdateStatus, focusedPac
                 <div className="driver-load-topline">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-xl font-semibold text-[color:var(--text)]">{pkg.packageId || 'Legacy record'}</p>
+                      <p className="text-xl font-semibold text-[color:var(--text)]">{pkg.description || 'Assigned Packet'}</p>
                       <StatusBadge status={pkg.status} />
                       {isStalePackage(pkg) ? <GhostChip className="load-board-flag-chip">Needs scan</GhostChip> : null}
                     </div>
-                    <p className="mt-1 text-sm text-[color:var(--muted)]">{pkg.description || 'Packet assigned to this shift.'}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <GhostChip className="font-mono text-[0.65rem] uppercase">{pkg.packageId || 'Legacy record'}</GhostChip>
+                    </div>
                   </div>
 
                   <div className="driver-load-chip-row">
@@ -330,8 +332,8 @@ function DriverPriorityStack({ packages = [] }) {
           <div className="grid gap-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-base font-semibold text-[color:var(--text)]">{pkg.packageId}</p>
-                <p className="mt-1 text-sm text-[color:var(--muted)]">{pkg.description}</p>
+                <p className="text-base font-semibold text-[color:var(--text)]">{pkg.description || 'Assigned Packet'}</p>
+                <p className="mt-1 font-mono text-xs uppercase text-[color:var(--muted)]">{pkg.packageId}</p>
               </div>
               <StatusBadge status={pkg.status} />
             </div>
@@ -378,9 +380,10 @@ function DriverActionCenter({ items = [], checklist = [], onFocusPacket, onJumpT
                   <GhostChip>{item.priority}</GhostChip>
                 </div>
 
-                <div className="grid gap-2 text-left">
-                  <p className="driver-action-card-title">{item.packageId} • {item.nextStepLabel}</p>
-                  <p className="driver-action-card-copy">{item.nextStepDetail}</p>
+                <div className="grid gap-1 text-left">
+                  <p className="driver-action-card-title">{item.description || 'Assigned Packet'}</p>
+                  <p className="font-mono text-[0.7rem] uppercase text-[color:var(--muted-strong)]">{item.packageId} • {item.nextStepLabel}</p>
+                  <p className="mt-1 driver-action-card-copy">{item.nextStepDetail}</p>
                 </div>
 
                 <div className="driver-action-card-meta">
@@ -474,11 +477,13 @@ function DriverBoardSearchResults({
             <div className="load-board-result-topline">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="truncate text-lg font-semibold text-[color:var(--text)]">{pkg.packageId || 'Legacy record'}</p>
+                  <p className="truncate text-lg font-semibold text-[color:var(--text)]">{pkg.description || 'Assigned Packet'}</p>
                   <StatusBadge status={pkg.status} />
                   {isStalePackage(pkg) ? <GhostChip className="load-board-flag-chip">Stale</GhostChip> : null}
                 </div>
-                <p className="mt-1 line-clamp-2 text-sm text-[color:var(--muted)]">{pkg.description || 'Shipment in progress'}</p>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <GhostChip className="font-mono text-[0.65rem] uppercase">{pkg.packageId || 'Legacy record'}</GhostChip>
+                </div>
               </div>
               <GhostChip>{pkg.truckId || 'No truck'}</GhostChip>
             </div>

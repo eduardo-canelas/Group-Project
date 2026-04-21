@@ -253,13 +253,13 @@ function AdminShipmentLedger({ packages = [], onEdit, onDelete }) {
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto]">
             <div className="grid gap-3 min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-lg font-semibold text-[color:var(--text)]">{pkg.packageId || 'Legacy record'}</p>
+                <p className="text-lg font-semibold text-[color:var(--text)]">{pkg.description || 'Assigned Packet'}</p>
                 <StatusBadge status={pkg.status} />
                 <GhostChip>{pkg.deliveryType || 'store'}</GhostChip>
-                <GhostChip>{pkg.ownerUsername || 'Unassigned'}</GhostChip>
+                <GhostChip className="font-mono text-xs uppercase">{pkg.packageId || 'Legacy record'}</GhostChip>
               </div>
 
-              <p className="text-sm leading-6 text-[color:var(--muted)]">{pkg.description}</p>
+              <p className="text-sm leading-6 text-[color:var(--muted)]">Driver: {pkg.ownerUsername || 'Unassigned'}</p>
 
               <RouteProgressStrip
                 pickup={pkg.pickupLocation || 'Origin'}

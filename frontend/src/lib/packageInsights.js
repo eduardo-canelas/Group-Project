@@ -180,6 +180,7 @@ export function getDriverActionQueue(packages) {
       return {
         id: pkg._id,
         packageId: pkg.packageId || 'Legacy record',
+        description: pkg.description || 'Assigned Packet',
         title,
         detail,
         nextStepLabel: nextStep.label,
