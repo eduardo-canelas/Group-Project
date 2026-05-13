@@ -1,0 +1,805 @@
+@layer base {
+  :root {
+    color-scheme: light;
+    --bg: oklch(96% 0.014 226);
+    --bg-elevated: oklch(98.5% 0.007 226);
+    --surface: oklch(98.9% 0.005 226);
+    --surface-strong: oklch(94.8% 0.014 226);
+    --surface-muted: oklch(91.8% 0.018 226);
+    --panel: oklch(96.4% 0.01 226);
+    --border: oklch(80.8% 0.026 226);
+    --text: oklch(22% 0.05 247);
+    --muted: oklch(43% 0.034 244);
+    --muted-strong: oklch(31% 0.04 247);
+    --accent: oklch(67% 0.12 195);
+    --accent-strong: oklch(43% 0.145 254);
+    --accent-soft: oklch(91.5% 0.052 203);
+    --hero: oklch(97.2% 0.01 226);
+    --shadow: 0 22px 60px -48px oklch(21% 0.055 247 / 0.38);
+    --ring: oklch(67% 0.12 195 / 0.22);
+  }
+
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+    --bg: oklch(17% 0.033 247);
+    --bg-elevated: oklch(20% 0.035 247);
+    --surface: oklch(23% 0.036 247);
+    --surface-strong: oklch(26.5% 0.038 247);
+    --surface-muted: oklch(30% 0.038 247);
+    --panel: oklch(21% 0.035 247);
+    --border: oklch(36% 0.042 247);
+    --text: oklch(94% 0.01 226);
+    --muted: oklch(72% 0.022 226);
+    --muted-strong: oklch(83% 0.018 226);
+    --accent: oklch(73% 0.12 195);
+    --accent-strong: oklch(68% 0.12 202);
+    --accent-soft: oklch(32% 0.06 205);
+    --hero: oklch(24% 0.036 247);
+    --shadow: 0 26px 70px -50px oklch(7% 0.035 247 / 0.76);
+    --ring: oklch(73% 0.12 195 / 0.22);
+  }
+}
+
+.app-shell {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-elevated) 94%, transparent), transparent 18rem),
+    linear-gradient(90deg, color-mix(in srgb, var(--accent-soft) 42%, transparent), transparent 34rem),
+    var(--bg) !important;
+}
+
+:root[data-theme='dark'] .app-shell {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-strong) 58%, transparent), transparent 18rem),
+    radial-gradient(ellipse at 18% -12%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 34rem),
+    var(--bg) !important;
+}
+
+.app-header-row {
+  border-radius: 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  padding: 0.52rem 0.62rem 0.52rem 0.85rem;
+  box-shadow: 0 18px 48px -40px oklch(18% 0.03 230 / 0.34);
+  backdrop-filter: blur(18px);
+}
+
+.brand-logo {
+  width: clamp(8rem, 21vw, 12rem) !important;
+}
+
+.theme-toggle {
+  border-color: color-mix(in srgb, var(--border) 86%, transparent);
+  background: var(--surface-strong);
+  box-shadow: none;
+}
+
+.theme-toggle-thumb {
+  background: var(--text);
+}
+
+.surface-card,
+.surface-panel,
+.metric-card,
+.mini-stat,
+.load-board-result-card {
+  border-color: color-mix(in srgb, var(--border) 88%, transparent);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  box-shadow: var(--shadow);
+  backdrop-filter: none;
+}
+
+.surface-card {
+  border-radius: 0.9rem;
+}
+
+.surface-panel {
+  border-radius: 0.75rem;
+}
+
+.button-primary,
+.button-secondary {
+  border-radius: 0.85rem;
+  min-height: 2.85rem;
+  letter-spacing: 0;
+}
+
+.button-primary {
+  color: oklch(98% 0.004 220);
+  background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent-strong) 78%, var(--accent)));
+  box-shadow: 0 18px 34px -26px color-mix(in srgb, var(--accent-strong) 72%, transparent);
+}
+
+.field-shell {
+  border-radius: 0.85rem;
+  background: var(--surface);
+}
+
+.metric-card::before,
+.mini-stat::before {
+  display: none;
+}
+
+.empty-state-mark {
+  position: relative;
+  margin-inline: auto;
+  display: grid;
+  height: 3.25rem;
+  width: 3.25rem;
+  place-items: center;
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: var(--surface-strong);
+}
+
+.empty-state-mark span {
+  display: block;
+  height: 1.25rem;
+  width: 1.25rem;
+  border-radius: 0.35rem;
+  border: 2px solid var(--accent);
+  box-shadow: 0.38rem 0.38rem 0 color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.auth-resend-shell {
+  --auth-bg: var(--bg);
+  --auth-surface-input: var(--surface);
+  --auth-border: var(--border);
+  --auth-text: var(--text);
+  --auth-muted: var(--muted);
+  --auth-faint: var(--muted-strong);
+  --text: var(--auth-text);
+  --muted: var(--auth-muted);
+  min-height: 100dvh;
+  background: var(--auth-bg);
+  color: var(--auth-text);
+}
+
+:root[data-theme='dark'] .auth-resend-shell {
+  --auth-text: oklch(94% 0.008 230);
+  --auth-muted: oklch(72% 0.016 230);
+  --auth-faint: oklch(83% 0.012 230);
+}
+
+.auth-resend-frame {
+  padding-block: clamp(0.55rem, 1.2vw, 1rem);
+}
+
+.auth-resend-grid {
+  gap: clamp(0.85rem, 1.5vw, 1.15rem);
+  min-height: calc(100dvh - 6rem);
+  align-items: stretch;
+}
+
+.auth-resend-visual {
+  min-height: clamp(30rem, 72dvh, 44rem) !important;
+  border-radius: 0.95rem;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  background: var(--surface-strong);
+  box-shadow: var(--shadow);
+}
+
+.auth-form-side {
+  padding: clamp(1.25rem, 2.8vw, 2.35rem);
+}
+
+.auth-form-inner {
+  max-width: 24rem;
+}
+
+.auth-wordmark {
+  margin-bottom: 1.45rem;
+  color: var(--auth-faint);
+}
+
+.auth-form-heading {
+  margin-bottom: 1.45rem;
+}
+
+.auth-form-heading h1,
+.auth-form-side label span:first-child {
+  color: color-mix(in srgb, var(--text) 88%, var(--accent-strong));
+}
+
+.auth-form-heading h1 {
+  font-size: clamp(2.7rem, 5vw, 4.6rem);
+  letter-spacing: -0.055em;
+}
+
+.auth-form-heading p {
+  margin-top: 0.72rem;
+  color: var(--auth-muted);
+  font-size: 0.98rem;
+  line-height: 1.6;
+}
+
+.auth-form-side .field-shell {
+  min-height: 3.2rem;
+  border-radius: 0.9rem;
+  border-color: var(--auth-border);
+  background: var(--auth-surface-input);
+  color: var(--auth-text);
+}
+
+.auth-form-side .button-primary {
+  min-height: 3.2rem;
+  color: oklch(98% 0.004 220);
+  background: linear-gradient(180deg, var(--accent), var(--accent-strong));
+}
+
+.auth-switch-link {
+  text-align: left;
+  color: var(--auth-muted);
+}
+
+.auth-switch-link a {
+  color: var(--auth-text);
+  text-decoration-color: color-mix(in srgb, var(--auth-text) 30%, transparent);
+}
+
+.seamless-video-el,
+.login-video-panel .seamless-video-el,
+.login-video-panel .seamless-video-light {
+  object-position: center center !important;
+}
+
+.seamless-video-el {
+  opacity: 0;
+  transition: opacity 1200ms cubic-bezier(0.22, 1, 0.36, 1), filter 1200ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+  will-change: opacity;
+}
+
+.seamless-video-el.is-active {
+  opacity: 1;
+}
+
+.seamless-video-el.is-leaving {
+  opacity: 0;
+}
+
+.seamless-video-wrap.is-blending .seamless-video-el {
+  filter: saturate(0.98) contrast(0.99);
+}
+
+.seamless-video-fade {
+  transition: background 1200ms cubic-bezier(0.22, 1, 0.36, 1), opacity 1200ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+@media (min-width: 900px) {
+  .auth-resend-grid-login {
+    grid-template-columns: minmax(0, 1.35fr) minmax(22rem, 0.65fr);
+  }
+
+  .auth-resend-grid-register {
+    grid-template-columns: minmax(22rem, 0.65fr) minmax(0, 1.35fr);
+  }
+}
+
+@media (max-width: 899px) {
+  .auth-resend-grid {
+    min-height: auto;
+  }
+
+  .auth-resend-visual {
+    min-height: clamp(16rem, 34dvh, 21rem) !important;
+  }
+
+  .auth-form-side {
+    padding: 1.15rem 0.4rem 0.75rem;
+  }
+
+  .auth-form-heading h1 {
+    font-size: clamp(2.15rem, 9vw, 2.85rem);
+  }
+}
+
+@media (max-width: 540px) {
+  .app-header-row {
+    padding: 0.5rem 0.55rem 0.5rem 0.7rem;
+  }
+
+  .brand-logo {
+    width: 8.25rem !important;
+  }
+
+  .auth-resend-frame {
+    padding-inline: 0.85rem;
+  }
+}
+
+.dashboard-frame {
+  max-width: 1480px;
+}
+
+.dashboard-main-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.dashboard-stack {
+  gap: 1rem;
+}
+
+.dashboard-panel-fixed-ledger,
+.dashboard-panel-fixed-primary,
+.dashboard-panel-fixed-update,
+.dashboard-panel-fixed-support,
+.dashboard-panel-fixed-insight {
+  min-height: auto;
+}
+
+.dashboard-ai-assistant,
+.ai-command-panel {
+  border-radius: 0.9rem;
+  border-color: var(--border);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, transparent), color-mix(in srgb, var(--surface-strong) 92%, transparent)),
+    var(--surface) !important;
+  box-shadow: var(--shadow);
+}
+
+.ai-command-panel::before,
+.ai-command-panel::after {
+  display: none;
+}
+
+.ai-command-title,
+.ai-command-subtitle,
+.briefing-chat-textarea,
+.briefing-message,
+.ai-status-label {
+  color: var(--text);
+}
+
+.hero-panel {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent-soft) 40%, transparent), transparent 54%),
+    var(--surface);
+}
+
+.metric-card,
+.mini-stat,
+.load-board-result-card,
+.driver-action-card,
+.shift-guide-item {
+  border-radius: 0.75rem;
+}
+
+.metric-card-value {
+  color: var(--text);
+}
+
+.search-filter-pills,
+.load-board-filter-pills {
+  align-items: center;
+}
+
+.filter-pill {
+  border-radius: 0.65rem;
+  background: var(--surface);
+}
+
+.filter-pill.is-active {
+  border-color: color-mix(in srgb, var(--accent) 54%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 62%, var(--surface));
+  color: color-mix(in srgb, var(--text) 74%, var(--accent-strong));
+  box-shadow: none;
+}
+
+.route-progress-strip,
+.logistics-flow-board,
+.exception-radar,
+.watch-grid {
+  border-radius: 0.85rem;
+}
+
+@media (min-width: 1180px) {
+  .dashboard-main-grid {
+    grid-template-columns: minmax(0, 1.2fr) minmax(24rem, 0.8fr);
+    align-items: start;
+  }
+}
+
+@media (min-width: 1024px) {
+  .dashboard-admin-ledger-panel {
+    height: calc(min(76dvh, 66rem) + min(74dvh, 60rem) + 1rem);
+  }
+
+  .dashboard-admin-ledger-panel .dashboard-scroll-region-ledger {
+    max-height: none;
+  }
+}
+
+/* Demo readiness: driver-first hierarchy and non-clipping intelligence cards. */
+.dashboard-main-grid-driver {
+  align-items: stretch;
+}
+
+.dashboard-main-grid-driver .dashboard-stack {
+  min-width: 0;
+}
+
+.accuracy-command-panel {
+  gap: 1.15rem;
+}
+
+.accuracy-command-heading {
+  align-items: flex-start;
+}
+
+.accuracy-command-heading > div {
+  min-width: 0;
+}
+
+.accuracy-command-heading .ghost-chip {
+  flex: 0 0 auto;
+  white-space: normal;
+  text-align: center;
+}
+
+.accuracy-metric-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.75rem), 1fr));
+  gap: 0.85rem;
+}
+
+.accuracy-metric-card {
+  display: grid;
+  min-width: 0;
+  min-height: 10.25rem;
+  align-content: start;
+  gap: 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 0.85rem;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 96%, transparent), color-mix(in srgb, var(--surface-strong) 72%, transparent)),
+    var(--surface);
+  padding: clamp(0.95rem, 2vw, 1.15rem);
+  box-shadow: var(--shadow);
+}
+
+.accuracy-metric-label {
+  max-width: 12rem;
+  color: var(--muted-strong);
+  font-family: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  line-height: 1.45;
+  text-transform: uppercase;
+}
+
+.accuracy-metric-value {
+  color: var(--text);
+  font-family: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: clamp(2.25rem, 7vw, 3.35rem);
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  line-height: 0.95;
+  overflow-wrap: anywhere;
+}
+
+.accuracy-metric-detail {
+  max-width: 18rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.accuracy-metric-card-success .accuracy-metric-value {
+  color: color-mix(in srgb, #059669 82%, var(--text));
+}
+
+.accuracy-metric-card-danger .accuracy-metric-value {
+  color: color-mix(in srgb, #be123c 78%, var(--text));
+}
+
+.accuracy-metric-card-accent .accuracy-metric-value {
+  color: color-mix(in srgb, var(--accent-strong) 82%, var(--text));
+}
+
+.driver-load-card {
+  padding: clamp(1rem, 2.5vw, 1.35rem);
+}
+
+.driver-load-meta-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: 0.85rem;
+}
+
+.driver-load-meta-grid p,
+.load-board-result-meta-grid p {
+  overflow-wrap: anywhere;
+}
+
+.driver-status-controls {
+  display: grid;
+  gap: 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  border-radius: 0.9rem;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent-soft) 58%, transparent), transparent 72%),
+    var(--surface);
+  padding: 0.95rem;
+}
+
+.driver-status-controls-header,
+.driver-status-controls-complete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+}
+
+.driver-status-controls-label {
+  color: var(--muted-strong);
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.16em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.driver-status-controls-copy {
+  margin-top: 0.25rem;
+  color: var(--text);
+  font-size: 0.92rem;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.driver-status-button-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  gap: 0.65rem;
+}
+
+.driver-load-status-action {
+  width: 100%;
+  min-height: 3.35rem;
+  justify-content: center;
+  text-align: center;
+  white-space: normal;
+}
+
+.driver-status-controls-compact {
+  flex: 1 1 18rem;
+  padding: 0.78rem;
+}
+
+.driver-status-controls-compact .driver-status-button-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5rem), 1fr));
+}
+
+.load-board-result-actions {
+  align-items: stretch;
+}
+
+.load-board-result-edit {
+  flex: 0 0 auto;
+}
+
+.driver-guided-summary {
+  display: grid;
+  gap: 1rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
+  border-radius: 0.9rem;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent-soft) 62%, transparent), transparent 68%),
+    var(--surface);
+  padding: 1rem;
+}
+
+.driver-guided-summary-kicker,
+.driver-action-card-package {
+  color: var(--muted-strong);
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.16em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.driver-guided-summary-title {
+  margin-top: 0.3rem;
+  color: var(--text);
+  font-size: 1.08rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+
+.driver-guided-summary-copy {
+  margin-top: 0.35rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.driver-guided-summary-actions,
+.driver-action-card-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr));
+  gap: 0.65rem;
+}
+
+.driver-action-card {
+  cursor: default;
+}
+
+.driver-action-card-controls {
+  padding-top: 0.85rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
+}
+
+.driver-action-card-controls .button-primary,
+.driver-action-card-controls .button-secondary,
+.driver-guided-summary-actions .button-primary,
+.driver-guided-summary-actions .button-secondary {
+  width: 100%;
+  justify-content: center;
+  text-align: center;
+  white-space: normal;
+}
+
+.ai-guided-panel {
+  display: grid;
+  gap: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  border-radius: 0.9rem;
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  padding: 0.9rem;
+}
+
+.ai-guided-heading,
+.ai-guided-card-main,
+.ai-guided-card-actions {
+  display: flex;
+  gap: 0.7rem;
+}
+
+.ai-guided-heading {
+  align-items: start;
+  justify-content: space-between;
+}
+
+.ai-guided-kicker,
+.ai-guided-card-meta {
+  color: var(--muted-strong);
+  font-family: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.ai-guided-title,
+.ai-guided-card-title {
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.ai-guided-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.ai-guided-card {
+  display: grid;
+  gap: 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+  border-radius: 0.8rem;
+  background: var(--surface);
+  padding: 0.85rem;
+}
+
+.ai-guided-card-main {
+  align-items: start;
+}
+
+.ai-guided-step {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
+  color: var(--muted-strong);
+  font-family: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.ai-guided-card-copy {
+  margin-top: 0.25rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.ai-guided-card-meta {
+  margin-top: 0.4rem;
+}
+
+.ai-guided-card-actions {
+  flex-wrap: wrap;
+}
+
+.ai-empty-icon {
+  width: 0.82rem;
+  height: 0.82rem;
+  border-radius: 0.25rem;
+  border: 2px solid currentColor;
+  box-shadow: 0.24rem 0.24rem 0 color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+@media (min-width: 1280px) {
+  .dashboard-main-grid-driver {
+    grid-template-columns: minmax(0, 1.18fr) minmax(26rem, 0.82fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .dashboard-frame {
+    padding-inline: 0.85rem;
+  }
+
+  .accuracy-command-heading,
+  .driver-load-topline,
+  .driver-status-controls-header,
+  .driver-status-controls-complete {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .accuracy-command-heading .ghost-chip,
+  .driver-load-chip-row,
+  .driver-status-controls .ghost-chip {
+    justify-content: flex-start;
+  }
+
+  .driver-load-card,
+  .load-board-result-card {
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .driver-status-controls {
+    margin-inline: -0.1rem;
+  }
+
+  .driver-status-button-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .driver-load-status-action {
+    min-height: 3.55rem;
+    font-size: 0.86rem;
+  }
+
+  .load-board-result-actions {
+    flex-direction: column;
+  }
+
+  .load-board-result-edit {
+    width: 100%;
+  }
+
+  .driver-guided-summary-actions,
+  .driver-action-card-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-guided-heading,
+  .ai-guided-card-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ai-guided-card-actions .briefing-chat-action {
+    justify-content: center;
+  }
+}

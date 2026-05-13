@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Alert, AppShell, Field, GlassCard, PageFrame, PrimaryButton, SectionHeading, SelectInput, SecondaryButton, TextInput } from '../components/ui';
+import { Alert, AppShell, Field, PageFrame, PrimaryButton, SelectInput, TextInput } from '../components/ui';
 import { usePageMotion } from '../components/motion';
 import { SeamlessVideo } from '../components/video-device';
 import api from '../lib/api';
@@ -21,7 +21,6 @@ function Register() {
   const handleRegister = async (event) => {
     event.preventDefault();
     setError('');
-
     try {
       await api.post('/auth/register', { username, password, role });
       navigate('/');
@@ -31,20 +30,21 @@ function Register() {
   };
 
   return (
-    <AppShell>
-      <PageFrame className="py-6 lg:py-10">
-        <div ref={scope} className="grid gap-6 lg:min-h-[calc(100vh-8rem)] lg:grid-cols-[0.92fr_1.08fr]">
-          <GlassCard className="motion-hero flex items-center p-6 sm:p-8 lg:p-10">
-            <div className="w-full">
-              <SectionHeading
-                as="h1"
-                kicker="Workspace onboarding"
-                title="Create access and get moving fast."
-              />
+    <AppShell className="auth-resend-shell">
+      <PageFrame className="auth-resend-frame">
+        <main ref={scope} className="auth-resend-grid auth-resend-grid-register">
+          <div className="auth-form-side motion-hero">
+            <div className="auth-form-inner">
+              <p className="auth-wordmark">RoutePulse</p>
+
+              <div className="auth-form-heading">
+                <h1>Create access</h1>
+                <p>Choose the workspace role for this user.</p>
+              </div>
 
               {error ? <Alert tone="error">{error}</Alert> : null}
 
-              <form className="mt-8 space-y-5" onSubmit={handleRegister}>
+              <form className="auth-form-fields" onSubmit={handleRegister}>
                 <Field label="Username">
                   <TextInput
                     type="text"
@@ -55,7 +55,6 @@ function Register() {
                     required
                   />
                 </Field>
-
                 <Field label="Password">
                   <TextInput
                     type="password"
@@ -66,34 +65,26 @@ function Register() {
                     required
                   />
                 </Field>
-
                 <Field label="Role">
                   <SelectInput value={role} onChange={(event) => setRole(event.target.value)}>
                     {roles.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
+                      <option key={option.value} value={option.value}>{option.label}</option>
                     ))}
                   </SelectInput>
                 </Field>
-
-                <PrimaryButton type="submit" className="w-full">
-                  Create account
-                </PrimaryButton>
+                <PrimaryButton type="submit" className="w-full">Create account</PrimaryButton>
               </form>
 
-              <div className="mt-6 border-t border-[color:var(--border)] pt-6">
-                <Link to="/">
-                  <SecondaryButton type="button">Return to sign in</SecondaryButton>
-                </Link>
-              </div>
+              <p className="auth-switch-link">
+                Already have access? <Link to="/">Sign in</Link>
+              </p>
             </div>
-          </GlassCard>
+          </div>
 
-          <div className="login-video-panel order-1 surface-card motion-hero">
+          <div className="auth-resend-visual login-video-panel motion-hero">
             <SeamlessVideo lightSrc="/register-light.mp4" darkSrc="/register-dark.mp4" />
           </div>
-        </div>
+        </main>
       </PageFrame>
     </AppShell>
   );

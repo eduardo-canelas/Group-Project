@@ -194,10 +194,10 @@ export function FilterPill({ children, active = false, className = '', ...props 
 }
 
 const toneValueColors = {
-  accent: 'text-[#60a5fa]',
+  accent: 'text-[color:var(--accent-strong)]',
   success: 'text-[#34d399]',
   danger: 'text-[#fb7185]',
-  neutral: 'text-[#a78bfa]',
+  neutral: 'text-[color:var(--text)]',
   default: 'text-[color:var(--text)]',
 };
 
@@ -219,7 +219,7 @@ export function Alert({ children, tone = 'error' }) {
     info: 'border-sky-500/25 bg-sky-500/10 text-sky-700 dark:text-sky-100',
   };
 
-  return <div className={`rounded-2xl border px-4 py-3 text-sm ${toneMap[tone] ?? toneMap.error}`}>{children}</div>;
+  return <div role={tone === 'error' ? 'alert' : 'status'} className={`rounded-2xl border px-4 py-3 text-sm ${toneMap[tone] ?? toneMap.error}`}>{children}</div>;
 }
 
 export function StatusBadge({ status }) {
@@ -233,11 +233,11 @@ export function StatusBadge({ status }) {
 export function EmptyState({ title, description, action }) {
   return (
     <GlassCard className="p-8 text-center">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-xl text-[color:var(--text)]">
-        +
+      <div className="empty-state-mark" aria-hidden="true">
+        <span />
       </div>
       <h3 className="mt-5 text-xl font-semibold text-[color:var(--text)]">{title}</h3>
-      <p className="mt-3 text-sm leading-7 text-[color:var(--muted)]">{description}</p>
+      {description ? <p className="mt-3 text-sm leading-7 text-[color:var(--muted)]">{description}</p> : null}
       {action ? <div className="mt-6 flex justify-center">{action}</div> : null}
     </GlassCard>
   );

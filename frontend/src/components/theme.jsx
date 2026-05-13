@@ -1,6 +1,5 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-
-const ThemeContext = createContext(null);
+import React, { useEffect, useMemo, useState } from 'react';
+import { ThemeContext, useTheme } from './theme-context';
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState('light');
@@ -20,16 +19,6 @@ export function ThemeProvider({ children }) {
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
-}
-
-export function useTheme() {
-  const context = useContext(ThemeContext);
-
-  if (!context) {
-    throw new Error('useTheme must be used within ThemeProvider');
-  }
-
-  return context;
 }
 
 export function ThemeToggle() {

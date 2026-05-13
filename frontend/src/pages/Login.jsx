@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Alert, AppShell, Field, GlassCard, PageFrame, PrimaryButton, SecondaryButton, SectionHeading, TextInput } from '../components/ui';
+import { Alert, AppShell, Field, PageFrame, PrimaryButton, TextInput } from '../components/ui';
 import { usePageMotion } from '../components/motion';
 import { SeamlessVideo } from '../components/video-device';
 import api from '../lib/api';
@@ -25,26 +25,25 @@ function Login() {
   };
 
   return (
-    <AppShell>
-      <PageFrame className="py-6 lg:py-10">
-        <div ref={scope} className="grid gap-6 lg:min-h-[calc(100vh-8rem)] lg:grid-cols-[1.22fr_0.78fr]">
-          <div className="login-video-panel order-1 surface-card motion-hero">
+    <AppShell className="auth-resend-shell">
+      <PageFrame className="auth-resend-frame">
+        <main ref={scope} className="auth-resend-grid auth-resend-grid-login">
+          <div className="auth-resend-visual login-video-panel motion-hero">
             <SeamlessVideo />
           </div>
 
-          <GlassCard className="order-2 motion-hero flex items-center p-6 sm:p-8 lg:p-10">
-            <div className="w-full">
-              <div className="mb-6">
-                <SectionHeading
-                  as="h1"
-                  kicker="Secure entry"
-                  title="Enter RoutePulse"
-                />
+          <div className="auth-form-side motion-hero">
+            <div className="auth-form-inner">
+              <p className="auth-wordmark">RoutePulse</p>
+
+              <div className="auth-form-heading">
+                <h1>Sign in</h1>
+                <p>Admin and driver workspace.</p>
               </div>
 
               {error ? <Alert tone="error">{error}</Alert> : null}
 
-              <form className="mt-7 space-y-5" onSubmit={handleLogin}>
+              <form className="auth-form-fields" onSubmit={handleLogin}>
                 <Field label="Username">
                   <TextInput
                     type="text"
@@ -68,15 +67,12 @@ function Login() {
                 <PrimaryButton type="submit" className="w-full">Enter workspace</PrimaryButton>
               </form>
 
-              <div className="mt-6 flex flex-wrap items-center justify-end gap-3 border-t border-[color:var(--border)] pt-6">
-                <Link to="/register">
-                  <SecondaryButton type="button">Create account</SecondaryButton>
-                </Link>
-              </div>
+              <p className="auth-switch-link">
+                No account? <Link to="/register">Create one</Link>
+              </p>
             </div>
-          </GlassCard>
-
-        </div>
+          </div>
+        </main>
       </PageFrame>
     </AppShell>
   );

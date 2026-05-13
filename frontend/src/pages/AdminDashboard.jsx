@@ -1,6 +1,7 @@
 import React, { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AIAssistant from '../components/ai-assistant';
+import { AccuracyCommandPanel, RouteMapPanel, ScanConsole } from '../components/logistics-intelligence';
 import { usePageMotion } from '../components/motion';
 import {
   ExceptionRadar,
@@ -30,8 +31,8 @@ import {
 } from '../components/ui';
 import { clearStoredUser } from '../lib/auth';
 import api from '../lib/api';
-import { formatStatusLabel, getStatusCounts } from '../lib/packageInsights';
-import { createPackageForm, deliveryTypeOptions, mapPackageToForm, statusOptions } from '../lib/packageFields';
+import { formatStatusLabel, getDriverGPSUrl, getStatusCounts } from '../lib/packageInsights';
+import { createPackageForm, deliveryTypeOptions, mapPackageToForm, priorityOptions, statusOptions } from '../lib/packageFields';
 
 const progressByStatus = {
   pending: 24,
@@ -57,12 +58,40 @@ const timestampFormatter = new Intl.DateTimeFormat('en-US', {
   minute: '2-digit',
 });
 
+function getPackageTitle(pkg) {
+  return pkg.description || 'Assigned Packet';
+}
+
+function getAdminPackageLabel(pkg) {
+  return pkg.description || (pkg.packageId ? `Package ID ${pkg.packageId}` : 'Assigned package');
+}
+
+function getPackageAmountLabel(pkg) {
+  return pkg.amount ?? pkg.weight ?? '—';
+}
+
+function formatDeliveryTypeLabel(type) {
+  return type
+    ? type
+      .replace(/_/g, ' ')
+      .split(' ')
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ')
+    : 'Store';
+}
+
 function buildPayload(formData) {
   return {
     packageId: formData.packageId,
     description: formData.description,
     amount: formData.amount,
     deliveryType: formData.deliveryType,
+    priority: formData.priority,
+    scanCode: formData.scanCode,
+    customerName: formData.customerName,
+    customerPhone: formData.customerPhone,
+    deliveryWindow: formData.deliveryWindow,
+    deliveryInstructions: formData.deliveryInstructions,
     truckId: formData.truckId,
     pickupLocation: formData.pickupLocation,
     dropoffLocation: formData.dropoffLocation,
@@ -135,7 +164,7 @@ function buildAdminFlowLanes(drivers) {
       progress: averageProgress,
       emphasis: exceptionCount > 0 ? 'alert' : activeCount > 0 ? 'accent' : 'neutral',
       packets: driver.packages.slice(0, 3).map((pkg) => ({
-        label: pkg.packageId,
+        label: getAdminPackageLabel(pkg),
         status: formatStatusLabel(pkg.status),
       })),
     };
@@ -208,8 +237,10 @@ function AdminAssignmentRoster({ drivers = [] }) {
                   <div key={assignedPackage.id} className="flex flex-col justify-between relative w-full rounded-2xl bg-[color:var(--surface)]/50 px-4 py-3 ring-1 ring-inset ring-[color:var(--border)] transition-colors hover:bg-[color:var(--surface)]">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold tracking-tight text-[color:var(--text)]">{assignedPackage.packageId}</p>
-                        <p className="mt-1 line-clamp-1 text-sm text-[color:var(--muted)]">{assignedPackage.description}</p>
+                        <p className="truncate text-sm font-semibold tracking-tight text-[color:var(--text)]">{assignedPackage.description || 'Assigned Packet'}</p>
+                        <p className="mt-1 font-mono text-[0.7rem] uppercase tracking-wide text-[color:var(--muted-strong)]">
+                          Package ID: {assignedPackage.packageId}
+                        </p>
                       </div>
                       <div className="shrink-0 text-right">
                         <p className="driver-board-package-status">{formatStatusLabel(assignedPackage.status)}</p>
@@ -252,14 +283,22 @@ function AdminShipmentLedger({ packages = [], onEdit, onDelete }) {
         <SurfacePanel key={pkg._id} className="motion-card">
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto]">
             <div className="grid gap-3 min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-lg font-semibold text-[color:var(--text)]">{pkg.description || 'Assigned Packet'}</p>
-                <StatusBadge status={pkg.status} />
-                <GhostChip>{pkg.deliveryType || 'store'}</GhostChip>
-                <GhostChip className="font-mono text-xs uppercase">{pkg.packageId || 'Legacy record'}</GhostChip>
+              <div className="grid gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-lg font-semibold text-[color:var(--text)]">{getPackageTitle(pkg)}</p>
+                  <StatusBadge status={pkg.status} />
+                  <GhostChip>{formatDeliveryTypeLabel(pkg.deliveryType)}</GhostChip>
+                </div>
+                <p className="font-mono text-[0.72rem] uppercase tracking-wide text-[color:var(--muted-strong)]">
+                  Package ID: {pkg.packageId || 'Legacy record'}
+                </p>
               </div>
 
-              <p className="text-sm leading-6 text-[color:var(--muted)]">Driver: {pkg.ownerUsername || 'Unassigned'}</p>
+              <div className="grid gap-2 text-sm text-[color:var(--muted)] sm:grid-cols-2 xl:grid-cols-3">
+                <p><span className="font-semibold text-[color:var(--text)]">Package:</span> {getPackageTitle(pkg)}</p>
+                <p><span className="font-semibold text-[color:var(--text)]">Assigned Driver:</span> {pkg.ownerUsername || 'Unassigned'}</p>
+                <p><span className="font-semibold text-[color:var(--text)]">Status:</span> {formatStatusLabel(pkg.status)}</p>
+              </div>
 
               <RouteProgressStrip
                 pickup={pkg.pickupLocation || 'Origin'}
@@ -269,11 +308,35 @@ function AdminShipmentLedger({ packages = [], onEdit, onDelete }) {
               />
 
               <div className="grid gap-2 text-sm text-[color:var(--muted)] sm:grid-cols-2 xl:grid-cols-4">
-                <p>Truck: {pkg.truckId || '—'}</p>
-                <p>Quantity: {pkg.amount ?? '—'}</p>
-                <p>Pickup: {pkg.pickupLocation || '—'}</p>
-                <p>Last scan: {formatTimestamp(pkg.updatedAt || pkg.createdAt)}</p>
+                <p><span className="font-semibold text-[color:var(--text)]">Package ID:</span> {pkg.packageId || 'Legacy record'}</p>
+                <p><span className="font-semibold text-[color:var(--text)]">Package Type:</span> {formatDeliveryTypeLabel(pkg.deliveryType)}</p>
+                <p><span className="font-semibold text-[color:var(--text)]">Priority:</span> {formatDeliveryTypeLabel(pkg.priority || 'standard')}</p>
+                <p><span className="font-semibold text-[color:var(--text)]">Truck:</span> {pkg.truckId || '—'}</p>
+                <p><span className="font-semibold text-[color:var(--text)]">Quantity:</span> {getPackageAmountLabel(pkg)}</p>
+                <p><span className="font-semibold text-[color:var(--text)]">Pickup:</span> {pkg.pickupLocation || '—'}</p>
+                <p><span className="font-semibold text-[color:var(--text)]">Drop Off:</span> {pkg.dropoffLocation || '—'}</p>
+                <p><span className="font-semibold text-[color:var(--text)]">Customer:</span> {pkg.customerName || '—'}</p>
+                <p><span className="font-semibold text-[color:var(--text)]">Assigned Driver:</span> {pkg.ownerUsername || 'Unassigned'}</p>
+                <p><span className="font-semibold text-[color:var(--text)]">Scan Code:</span> {pkg.scanCode || pkg.packageId || '—'}</p>
+                <p><span className="font-semibold text-[color:var(--text)]">Last Scan:</span> {formatTimestamp(pkg.updatedAt || pkg.createdAt)}</p>
               </div>
+
+              {getDriverGPSUrl(pkg) ? (
+                <a
+                  href={getDriverGPSUrl(pkg)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="driver-navigate-link driver-gps-link"
+                  style={{ width: 'fit-content' }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
+                    <circle cx="10" cy="10" r="3" fill="currentColor" />
+                    <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.5" />
+                    <path d="M10 1v3M10 16v3M1 10h3M16 10h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                  View driver location — {pkg.ownerUsername || 'driver'}
+                </a>
+              ) : null}
             </div>
 
             <div className="flex flex-wrap items-start gap-3 xl:flex-col xl:items-stretch">
@@ -287,6 +350,21 @@ function AdminShipmentLedger({ packages = [], onEdit, onDelete }) {
   );
 }
 
+function RiskPulseBanner({ pulse, onDismiss }) {
+  if (!pulse) return null;
+  return (
+    <div className={`risk-pulse-banner risk-pulse-banner-${pulse.level}`} role="alert" aria-live="polite">
+      <div className="risk-pulse-indicator">
+        <span className="risk-pulse-dot" aria-hidden="true" />
+      </div>
+      <p className="risk-pulse-text">{pulse.message}</p>
+      <button type="button" className="risk-pulse-action" onClick={onDismiss} aria-label="Dismiss alert">
+        Dismiss
+      </button>
+    </div>
+  );
+}
+
 function AdminDashboard() {
   const [packages, setPackages] = useState([]);
   const [dataModelSummary, setDataModelSummary] = useState(null);
@@ -295,6 +373,8 @@ function AdminDashboard() {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [riskBannerDismissed, setRiskBannerDismissed] = useState(false);
+  const [currentTime] = useState(() => Date.now());
   const navigate = useNavigate();
   const scope = usePageMotion();
   const deferredSearch = useDeferredValue(search);
@@ -377,6 +457,12 @@ function AdminDashboard() {
     }
   };
 
+  const handleScan = async (scanPayload) => {
+    const response = await api.post('/packages/scan', scanPayload);
+    await loadDashboardData();
+    return response.data;
+  };
+
   const handleLogout = () => {
     clearStoredUser();
     navigate('/');
@@ -394,6 +480,9 @@ function AdminDashboard() {
           pkg.packageId,
           pkg.description,
           pkg.ownerUsername,
+          pkg.customerName,
+          pkg.priority,
+          pkg.scanCode,
           pkg.truckId,
           pkg.pickupLocation,
           pkg.dropoffLocation,
@@ -470,6 +559,24 @@ function AdminDashboard() {
     [searchScopedPackages.length, statusCounts],
   );
   const hasActiveFilters = search.trim().length > 0 || statusFilter !== 'all';
+  const riskPulse = useMemo(() => {
+    if (!packages.length || riskBannerDismissed) return null;
+    const critical = packages.filter((pkg) => ['lost', 'cancelled'].includes(pkg.status));
+    if (critical.length > 0) {
+      return { level: 'critical', message: `${critical.length} package${critical.length === 1 ? '' : 's'} marked lost or cancelled — immediate review needed` };
+    }
+    const exceptions = packages.filter(
+      (pkg) =>
+        pkg.status === 'returned' ||
+        (['pending', 'picked_up', 'in_transit'].includes(pkg.status) &&
+          currentTime - new Date(pkg.updatedAt || pkg.createdAt).getTime() > 43200000),
+    );
+    if (exceptions.length > 0) {
+      return { level: 'warning', message: `${exceptions.length} package${exceptions.length === 1 ? '' : 's'} overdue or returned — review before next dispatch` };
+    }
+    return null;
+  }, [currentTime, packages, riskBannerDismissed]);
+
   const adminFlowLanes = useMemo(() => buildAdminFlowLanes(filteredDrivers.length ? filteredDrivers : driverSummaries), [filteredDrivers, driverSummaries]);
   const flowSummary = useMemo(
     () => [
@@ -488,6 +595,8 @@ function AdminDashboard() {
       <PageFrame className="dashboard-frame">
         <div ref={scope} className="space-y-6 sm:space-y-8">
           <div className="motion-hero grid gap-5">
+            <RiskPulseBanner pulse={riskPulse} onDismiss={() => setRiskBannerDismissed(true)} />
+
             <PageTitle
               kicker="Admin Dashboard"
               title="Dispatch Control"
@@ -501,7 +610,7 @@ function AdminDashboard() {
             />
 
             <AIAssistant
-              className="dashboard-ai-assistant ai-top-panel p-5 sm:p-6"
+              className="dashboard-ai-assistant ai-top-panel"
               title="Ask RoutePulse"
               suggestions={ADMIN_AI_SUGGESTIONS}
               perspective="admin"
@@ -512,7 +621,7 @@ function AdminDashboard() {
 
           <div className="dashboard-main-grid">
             <div className="dashboard-stack">
-              <GlassCard className="motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-ledger">
+              <GlassCard className="motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-ledger dashboard-admin-ledger-panel">
                 <SectionHeading
                   kicker="Ledger"
                   title="All Shipments"
@@ -584,14 +693,21 @@ function AdminDashboard() {
             </div>
 
             <div className="dashboard-stack">
-              <GlassCard className="motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-primary">
+              <GlassCard className={`motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-primary admin-dispatch-panel${editingId ? ' form-editing-active' : ''}`}>
                   <SectionHeading
                     kicker={editingId ? 'Edit Shipment' : 'New Shipment'}
                     title={editingId ? 'Update Dispatch' : 'Create Dispatch'}
                     description="Assign a load without leaving the board."
                   />
+                  {editingId ? (
+                    <div className="form-editing-banner mt-4">
+                      <span className="form-editing-dot" aria-hidden="true" />
+                      <span>Editing existing shipment — save to update the record</span>
+                    </div>
+                  ) : null}
 
-                <form id="shipment-form" className="mt-5 space-y-4 pb-4" onSubmit={handleSubmit}>
+                <form id="shipment-form" className="admin-dispatch-form" onSubmit={handleSubmit}>
+                  <div className="admin-dispatch-fields">
                   <div className="grid gap-4 sm:grid-cols-2">
                     <Field label="Driver username">
                       <TextInput
@@ -669,6 +785,22 @@ function AdminDashboard() {
                       </SelectInput>
                     </Field>
 
+                    <Field label="Priority">
+                      <SelectInput name="priority" value={formData.priority} onChange={updateField('priority')}>
+                        {priorityOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </SelectInput>
+                    </Field>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field label="Scan code" hint="Barcode value">
+                      <TextInput name="scan_code" type="text" value={formData.scanCode} onChange={updateField('scanCode')} placeholder="SCAN-PKG-2048" autoComplete="off" spellCheck={false} />
+                    </Field>
+
                     <Field label="Status">
                       <SelectInput name="status" value={formData.status} onChange={updateField('status')}>
                         {statusOptions.map((option) => (
@@ -680,14 +812,55 @@ function AdminDashboard() {
                     </Field>
                   </div>
 
-                  <div className="flex flex-wrap gap-3">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field label="Customer name">
+                      <TextInput name="customer_name" type="text" value={formData.customerName} onChange={updateField('customerName')} placeholder="Pine Street Market" autoComplete="off" />
+                    </Field>
+
+                    <Field label="Delivery window">
+                      <TextInput name="delivery_window" type="text" value={formData.deliveryWindow} onChange={updateField('deliveryWindow')} placeholder="Today, 2:00 PM - 4:00 PM" autoComplete="off" />
+                    </Field>
+                  </div>
+
+                  <Field label="Delivery instructions">
+                    <TextInput
+                      name="delivery_instructions"
+                      type="text"
+                      value={formData.deliveryInstructions}
+                      onChange={updateField('deliveryInstructions')}
+                      placeholder="Use back entrance, scan shelf count, collect signature…"
+                      autoComplete="off"
+                    />
+                  </Field>
+
+                  </div>
+
+                  <div className="admin-dispatch-actions">
                     <PrimaryButton type="submit" className="flex-1">
-                      {editingId ? 'Save Shipment' : 'Create Shipment'}
+                      {editingId ? 'Save Package' : 'Create Package'}
                     </PrimaryButton>
                     {editingId ? <SecondaryButton type="button" onClick={resetForm}>Cancel Edit</SecondaryButton> : null}
                   </div>
                 </form>
 
+              </GlassCard>
+
+              <GlassCard className="motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-ledger">
+                <div className="dashboard-scroll-region dashboard-scroll-region-flow dashboard-scroll-fill">
+                  <div className="grid gap-5">
+                    <ScanConsole
+                      title="Scan into database"
+                      description="Use package ID or barcode value to create a custody scan, refresh status, and update accuracy."
+                      defaultLocation="Dispatch desk"
+                      onScan={handleScan}
+                    />
+                    <RouteMapPanel
+                      packages={filteredPackages.length ? filteredPackages : packages}
+                      title="Google-style route map"
+                      description="Preview active movement and hand off a route to Google Maps when a driver needs turn-by-turn directions."
+                    />
+                  </div>
+                </div>
               </GlassCard>
 
               <GlassCard className="motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-ledger">
@@ -705,6 +878,10 @@ function AdminDashboard() {
               </GlassCard>
             </div>
           </div>
+
+          <GlassCard className="motion-section p-5 sm:p-6">
+            <AccuracyCommandPanel packages={packages} title="Small-business delivery accuracy" />
+          </GlassCard>
 
           <div className="dashboard-insight-grid">
             <GlassCard className="motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-insight">
@@ -761,8 +938,9 @@ function AdminDashboard() {
                       <div key={event.id} className="event-row">
                         <span className="event-index">{String(index + 1).padStart(2, '0')}</span>
                         <div className="min-w-0">
-                          <p className="font-semibold text-[color:var(--text)]">{event.packageId}</p>
+                          <p className="font-semibold text-[color:var(--text)]">{event.packageDescription || event.packageId}</p>
                           <p className="event-meta">
+                            {event.packageDescription ? `Package ID: ${event.packageId}. ` : ''}
                             {event.username} moved it through {event.facilityName}
                             {event.facilityType ? ` (${event.facilityType})` : ''}
                           </p>

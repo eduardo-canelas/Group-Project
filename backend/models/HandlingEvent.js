@@ -31,6 +31,14 @@ const handlingEventSchema = new mongoose.Schema({
         enum: ["pending", "picked_up", "in_transit", "delivered", "lost", "returned", "cancelled"],
         required: true,
     },
+    timeStamp: {
+        type: Date,
+        default: Date.now,
+    },
+    notes: {
+        type: String,
+        trim: true,
+    },
 }, { timestamps: true });
 
 handlingEventSchema.index({ package: 1, timeStamp: -1 });

@@ -5,6 +5,7 @@ const HandlingEvent = require("../models/HandlingEvent");
 
 const riskStatuses = new Set(["pending", "returned", "lost", "cancelled"]);
 const activeStatuses = new Set(["pending", "picked_up", "in_transit"]);
+const closedStatuses = new Set(["delivered"]);
 const statusWeights = {
     lost: 100,
     cancelled: 88,
@@ -40,6 +41,7 @@ const DRIVER_SYSTEM_PROMPT =
     "Never sound like a leadership report. Never use vague phrases like operational signal, route pressure, executive summary, intervention, or escalation unless the data clearly requires it. " +
     "When a package may be lost, tell the driver exactly what to do next in order. " +
     "Keep the response grounded only in the provided backend state. Do not invent data. Preserve package IDs, counts, routes, and statuses exactly. " +
+    "When naming a package, lead with its description or displayName, and keep the package ID as supporting detail only. " +
     "Return strict JSON only with keys headline, executiveSummary, narrative, operationalPulse, metrics, riskPackages, routeAlerts, facilityAlerts, driverAlerts, recommendations, recentEvents. " +
     "For driver responses: headline must be one short sentence, executiveSummary must be 1 to 2 short sentences, narrative must explain the main issue in simple terms, operationalPulse must be a short support line, and recommendations must be 3 short action objects with clear titles and simple details.";
 
@@ -48,6 +50,7 @@ const ADMIN_SYSTEM_PROMPT =
     "Return strict JSON only, with no markdown fences. Keep the response grounded only in the provided backend state. " +
     "Write like a polished dispatch briefing: specific, concise, and decision-ready. " +
     "Do not invent data. Preserve provided counts and identifiers exactly. " +
+    "When naming a package, lead with its description or displayName, and keep the package ID as supporting detail only. " +
     "Return an object with keys headline, executiveSummary, narrative, operationalPulse, metrics, riskPackages, routeAlerts, facilityAlerts, driverAlerts, recommendations, recentEvents. " +
     "metrics must be an array of 4 objects: {label, value, context, tone}. " +
     "riskPackages, routeAlerts, facilityAlerts, driverAlerts, and recentEvents should keep the provided objects but may tighten reason/summary wording. " +
@@ -63,6 +66,22 @@ function formatStatusLabel(status = "unknown") {
 
 function formatDeliveryType(type = "store") {
     return type.charAt(0).toUpperCase() + type.slice(1);
+}
+
+function getPackageDisplayName(pkg) {
+    const description = typeof pkg.description === "string" ? pkg.description.trim() : "";
+    if (description) {
+        return description;
+    }
+
+    return pkg.packageId ? `Package ID ${pkg.packageId}` : "This package";
+}
+
+function getPackageDisplayLabel(pkg) {
+    const displayName = getPackageDisplayName(pkg);
+    return pkg.packageId && !displayName.includes(pkg.packageId)
+        ? `${displayName} (Package ID ${pkg.packageId})`
+        : displayName;
 }
 
 function formatRelativeTime(timestamp) {
@@ -111,15 +130,18 @@ function summarizePackages(packages) {
     const facilityMap = new Map();
     const driverMap = new Map();
 
-    const rankedPackages = packages
+    const packagesWithRisk = packages
         .map((pkg) => ({
             ...pkg,
             riskScore: computePackageRisk(pkg),
             routeLabel: buildRouteLabel(pkg),
-        }))
+        }));
+
+    const rankedPackages = packagesWithRisk
+        .filter((pkg) => !closedStatuses.has(pkg.status))
         .sort((left, right) => right.riskScore - left.riskScore);
 
-    rankedPackages.forEach((pkg) => {
+    packagesWithRisk.forEach((pkg) => {
         const status = pkg.status || "unknown";
         const deliveryType = pkg.deliveryType || "store";
         const routeLabel = pkg.routeLabel;
@@ -197,6 +219,8 @@ function summarizePackages(packages) {
         rankedPackages: rankedPackages.slice(0, 6).map((pkg) => ({
             packageId: pkg.packageId || "Legacy record",
             description: pkg.description,
+            displayName: getPackageDisplayName(pkg),
+            displayLabel: getPackageDisplayLabel(pkg),
             status: pkg.status,
             statusLabel: formatStatusLabel(pkg.status),
             severity: pkg.riskScore >= 90 ? "critical" : pkg.riskScore >= 68 ? "elevated" : "watch",
@@ -205,7 +229,7 @@ function summarizePackages(packages) {
             route: pkg.routeLabel,
             currentFacility: pkg.currentFacility?.name || "Unknown facility",
             lastUpdated: pkg.updatedAt,
-            reason: `${formatStatusLabel(pkg.status)} shipment on ${pkg.routeLabel} with ${pkg.amount || 0} units and last activity ${formatRelativeTime(pkg.updatedAt)}`,
+            reason: `${getPackageDisplayLabel(pkg)} is ${formatStatusLabel(pkg.status).toLowerCase()} on ${pkg.routeLabel} with ${pkg.amount || 0} units and last activity ${formatRelativeTime(pkg.updatedAt)}`,
             riskScore: pkg.riskScore,
         })),
     };
@@ -275,6 +299,8 @@ function buildContextSummary({
 function buildRecentEvents(recentEvents) {
     return recentEvents.map((event) => ({
         packageId: event.package?.packageId || "Unknown package",
+        description: event.package?.description || "",
+        displayName: getPackageDisplayName(event.package || {}),
         eventType: event.eventType,
         facility: event.facility?.name || "Unknown facility",
         actor: event.user?.username || "Unknown user",
@@ -295,13 +321,21 @@ function buildLocalBriefing(prompt, perspective, context) {
     });
 
     const recommendations = [...fallbackActionTemplates];
+    const inTransitCount = packageInsights.statusBreakdown.in_transit || 0;
+    const topPackage = packageInsights.rankedPackages[0];
+    const topPackageName = topPackage ? (topPackage.displayName || topPackage.description || topPackage.packageId) : "";
+    const topPackageLabel = topPackage ? (topPackage.displayLabel || topPackageName) : "";
     if (packageInsights.rankedPackages[0]) {
         recommendations[0] = {
             title: perspective === "driver"
-                ? `Check ${packageInsights.rankedPackages[0].packageId} now`
-                : `Escalate ${packageInsights.rankedPackages[0].packageId} first`,
+                ? packageInsights.rankedPackages[0].status === "in_transit"
+                    ? `Confirm delivery for ${topPackageName}`
+                    : `Check ${topPackageName} now`
+                : `Escalate ${topPackageName} first`,
             detail: perspective === "driver"
-                ? `${formatStatusLabel(packageInsights.rankedPackages[0].status)}. Re-scan it, confirm the truck, and verify the drop-off.`
+                ? packageInsights.rankedPackages[0].status === "in_transit"
+                    ? `${topPackageLabel} is in transit. Check the drop-off, scan at arrival, and mark delivered only after the handoff is done.`
+                    : `${topPackageLabel} is ${formatStatusLabel(packageInsights.rankedPackages[0].status).toLowerCase()}. Re-scan it, confirm the truck, and verify the drop-off.`
                 : packageInsights.rankedPackages[0].reason,
             priority: packageInsights.rankedPackages[0].severity === "critical" ? "critical" : "high",
         };
@@ -321,16 +355,24 @@ function buildLocalBriefing(prompt, perspective, context) {
 
     if (perspective === "driver") {
         return {
-            headline: packageInsights.rankedPackages[0]
-                ? `${packageInsights.rankedPackages[0].packageId} needs attention now`
+            headline: topPackage
+                ? topPackage.status === "in_transit"
+                    ? `${topPackageName} is in transit`
+                    : `${topPackageName} needs attention now`
                 : "Your route looks clear right now",
-            executiveSummary: packageInsights.rankedPackages[0]
-                ? `Start with the highest-risk package first. Check the scan, truck, and drop-off before moving on.`
+            executiveSummary: topPackage
+                ? topPackage.status === "in_transit"
+                    ? `${inTransitCount} package${inTransitCount === 1 ? "" : "s"} are in transit. Start with the next drop-off, keep the scan current, and mark delivered only after the handoff.`
+                    : `Start with the highest-risk package first. Check the scan, truck, and drop-off before moving on.`
                 : `No high-risk package is standing out right now. Keep scans current and confirm handoffs.`,
-            narrative: packageInsights.rankedPackages[0]
-                ? `${packageInsights.rankedPackages[0].packageId} is the main risk on your route. Lost and delayed packages usually come from a missing scan, wrong truck, or wrong stop.`
+            narrative: topPackage
+                ? topPackage.status === "in_transit"
+                    ? `${topPackageLabel} is already moving. The useful update is simple: confirm the stop, scan when you arrive, and close it as delivered after the package is handed off.`
+                    : `${topPackageLabel} is the main risk on your route. Lost and delayed packages usually come from a missing scan, wrong truck, or wrong stop.`
                 : "Nothing critical is standing out right now, but keeping scans current helps stop packages from going missing.",
-            operationalPulse: packageInsights.rankedPackages.length
+            operationalPulse: inTransitCount > 0
+                ? `${inTransitCount} package${inTransitCount === 1 ? "" : "s"} are in transit and should stay visible until delivered.`
+                : packageInsights.rankedPackages.length
                 ? `${packageInsights.rankedPackages.length} package${packageInsights.rankedPackages.length === 1 ? "" : "s"} on your route need closer attention.`
                 : "No risk packages are standing out right now.",
             metrics: base.metrics,
@@ -508,7 +550,7 @@ exports.generateOpsBriefing = async (req, res) => {
             HandlingEvent.find()
                 .sort({ timeStamp: -1, createdAt: -1 })
                 .limit(8)
-                .populate("package", "packageId")
+                .populate("package", "packageId description")
                 .populate("facility", "name location")
                 .populate("user", "username")
                 .lean(),

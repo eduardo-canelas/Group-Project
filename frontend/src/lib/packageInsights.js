@@ -1,6 +1,7 @@
 const statusOrder = ['pending', 'picked_up', 'in_transit', 'delivered', 'returned', 'lost', 'cancelled'];
 const activeStatuses = new Set(['pending', 'picked_up', 'in_transit']);
 const exceptionStatuses = new Set(['pending', 'returned', 'lost', 'cancelled']);
+const closedStatuses = new Set(['delivered']);
 
 export function formatStatusLabel(status) {
   return status
@@ -40,11 +41,12 @@ export function getPriorityPackages(packages) {
 
 export function getDriverNextStep(pkg) {
   const route = `${pkg.pickupLocation || 'pickup'} -> ${pkg.dropoffLocation || 'drop-off'}`;
+  const packageName = pkg.description || (pkg.packageId ? `Package ID ${pkg.packageId}` : 'this packet');
 
   if (pkg.status === 'pending') {
     return {
       label: 'Confirm pickup',
-      detail: `Scan ${pkg.packageId || 'this packet'} at pickup and verify the truck before it leaves ${pkg.pickupLocation || 'the stop'}.`,
+      detail: `Scan ${packageName} at pickup and verify the truck before it leaves ${pkg.pickupLocation || 'the stop'}.`,
       helper: `Pickup waiting on ${route}.`,
     };
   }
@@ -143,15 +145,17 @@ export function formatRelativeTime(timestamp) {
 
 export function getDriverActionQueue(packages) {
   return packages
+    .filter((pkg) => !closedStatuses.has(pkg.status))
     .map((pkg) => {
       const ageHours = Math.max(0, (Date.now() - new Date(pkg.updatedAt || pkg.createdAt || Date.now()).getTime()) / (1000 * 60 * 60));
       const nextStep = getDriverNextStep(pkg);
+      const suggestedStatuses = getSuggestedStatuses(pkg.status);
       const priority =
         pkg.status === 'lost'
           ? 'critical'
           : pkg.status === 'returned' || pkg.status === 'cancelled'
             ? 'high'
-            : pkg.status === 'pending'
+            : pkg.status === 'pending' || pkg.status === 'in_transit'
               ? 'medium'
               : ageHours >= 12
                 ? 'medium'
@@ -163,6 +167,9 @@ export function getDriverActionQueue(packages) {
       if (pkg.status === 'pending') {
         title = 'Confirm pickup handoff';
         detail = 'This load is still pending. A fast pickup scan prevents it from looking lost to dispatch.';
+      } else if (pkg.status === 'in_transit') {
+        title = 'Confirm delivery update';
+        detail = 'This load is in transit. Check the drop-off, scan at arrival, then mark it delivered when the handoff is complete.';
       } else if (pkg.status === 'lost') {
         title = 'Recover lost shipment';
         detail = 'Verify the last known truck or stop and update dispatch immediately.';
@@ -185,6 +192,8 @@ export function getDriverActionQueue(packages) {
         detail,
         nextStepLabel: nextStep.label,
         nextStepDetail: nextStep.detail,
+        nextStatuses: suggestedStatuses,
+        primaryStatus: suggestedStatuses[0] || '',
         helper: nextStep.helper,
         amount: pkg.amount ?? pkg.weight ?? '—',
         truckId: pkg.truckId || 'No truck',
@@ -230,4 +239,65 @@ export function getSuggestedStatuses(status) {
   };
 
   return nextSteps[status] || [];
+}
+
+export function getPackageAccuracy(pkg) {
+  const requiredSignals = [
+    pkg.packageId,
+    pkg.description,
+    pkg.ownerUsername,
+    pkg.truckId,
+    pkg.pickupLocation,
+    pkg.dropoffLocation,
+    pkg.lastHandlingEvent || pkg.lastScanType || pkg.scanCount,
+  ];
+  const presentSignals = requiredSignals.filter(Boolean).length;
+  const baseScore = Math.round((presentSignals / requiredSignals.length) * 82);
+  const scanBonus = Math.min(12, Number(pkg.scanCount || 0) * 3);
+  const exceptionPenalty = ['lost', 'returned', 'cancelled'].includes(pkg.status) ? 16 : 0;
+  const stalePenalty = activeStatuses.has(pkg.status) && Date.now() - new Date(pkg.updatedAt || pkg.createdAt || Date.now()).getTime() > 12 * 60 * 60 * 1000 ? 10 : 0;
+
+  return Math.max(0, Math.min(100, pkg.accuracyScore ?? baseScore + scanBonus - exceptionPenalty - stalePenalty));
+}
+
+export function getAccuracyTone(score) {
+  if (score >= 86) return 'success';
+  if (score >= 68) return 'accent';
+  return 'danger';
+}
+
+export function getAccuracyLabel(score) {
+  if (score >= 86) return 'Strong chain of custody';
+  if (score >= 68) return 'Usable, needs more scans';
+  return 'High accuracy risk';
+}
+
+export function getRouteMapUrl(pkg) {
+  const origin = encodeURIComponent(pkg.pickupLocation || '');
+  const destination = encodeURIComponent(pkg.dropoffLocation || '');
+
+  if (!origin && !destination) {
+    return 'https://www.google.com/maps';
+  }
+
+  return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=driving`;
+}
+
+export function getDriverGPSUrl(pkg) {
+  if (!pkg?.lastScanLat || !pkg?.lastScanLng) return null;
+  return `https://www.google.com/maps?q=${pkg.lastScanLat},${pkg.lastScanLng}`;
+}
+
+export function getScanTypeLabel(scanType) {
+  const labels = {
+    intake: 'Intake scan',
+    pickup: 'Pickup scan',
+    loaded: 'Loaded scan',
+    in_transit: 'In transit scan',
+    delivery: 'Delivery scan',
+    exception: 'Exception scan',
+    audit: 'Audit scan',
+  };
+
+  return labels[scanType] || 'No scan yet';
 }

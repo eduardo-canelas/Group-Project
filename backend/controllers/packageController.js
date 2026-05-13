@@ -14,6 +14,12 @@ const DRIVER_EDITABLE_FIELDS = [
     "amount",
     "weight",
     "deliveryType",
+    "priority",
+    "scanCode",
+    "customerName",
+    "customerPhone",
+    "deliveryWindow",
+    "deliveryInstructions",
     "truckId",
     "pickupLocation",
     "dropoffLocation",
@@ -165,6 +171,31 @@ function mapStatusToEventType(status) {
     }
 }
 
+function normalizeScanType(value) {
+    const normalized = normalizeString(value).toLowerCase();
+    const allowed = new Set(["intake", "pickup", "loaded", "in_transit", "delivery", "exception", "audit"]);
+    return allowed.has(normalized) ? normalized : "audit";
+}
+
+function mapScanTypeToStatus(scanType, requestedStatus) {
+    const normalizedStatus = normalizeString(requestedStatus);
+    if (["pending", "picked_up", "in_transit", "delivered", "lost", "returned", "cancelled"].includes(normalizedStatus)) {
+        return normalizedStatus;
+    }
+
+    const statusByScan = {
+        intake: "pending",
+        pickup: "picked_up",
+        loaded: "in_transit",
+        in_transit: "in_transit",
+        delivery: "delivered",
+        exception: "returned",
+        audit: null,
+    };
+
+    return statusByScan[scanType];
+}
+
 async function buildTrackingContext(pkg) {
     const pickupFacility = await ensureFacility(pkg.pickupLocation, pkg.deliveryType, "pickup", "Origin Facility");
     const dropoffFacility = await ensureFacility(pkg.dropoffLocation, pkg.deliveryType, "dropoff", "Destination Facility");
@@ -217,7 +248,21 @@ async function buildPackagePayload(body, currentUser, existingPackage) {
     const incoming = pickAllowedFields(body, allowedFields);
     const payload = {};
 
-    for (const field of ["packageId", "description", "deliveryType", "truckId", "pickupLocation", "dropoffLocation", "status"]) {
+    for (const field of [
+        "packageId",
+        "description",
+        "deliveryType",
+        "priority",
+        "scanCode",
+        "customerName",
+        "customerPhone",
+        "deliveryWindow",
+        "deliveryInstructions",
+        "truckId",
+        "pickupLocation",
+        "dropoffLocation",
+        "status",
+    ]) {
         if (Object.prototype.hasOwnProperty.call(incoming, field)) {
             payload[field] = normalizeString(incoming[field]);
         }
@@ -429,6 +474,82 @@ exports.getDataModelSummary = async (req, res) => {
     }
 };
 
+exports.scanPackage = async (req, res) => {
+    try {
+        const code = normalizeString(req.body.code || req.body.packageId || req.body.scanCode);
+        requireField(code, "Scan code");
+
+        const lookup = [{ packageId: code }, { scanCode: code }];
+        if (mongoose.Types.ObjectId.isValid(code)) {
+            lookup.push({ _id: code });
+        }
+
+        const pkg = await Package.findOne({ $or: lookup });
+        if (!pkg) {
+            return res.status(404).json({ message: "Package not found" });
+        }
+
+        if (!canAccessPackage(pkg, req.currentUser)) {
+            return res.status(403).json({ message: "You can only scan packages assigned to you" });
+        }
+
+        const previousPackage = pkg.toObject();
+        const scanType = normalizeScanType(req.body.scanType);
+        const nextStatus = mapScanTypeToStatus(scanType, req.body.status);
+        const scanLocation = normalizeString(req.body.currentLocation);
+        const scanNote = normalizeString(req.body.note);
+        const lat = req.body.lat != null ? Number(req.body.lat) : undefined;
+        const lng = req.body.lng != null ? Number(req.body.lng) : undefined;
+
+        if (nextStatus) {
+            pkg.status = nextStatus;
+        }
+
+        if (scanLocation) {
+            pkg.lastScanLocation = scanLocation;
+        }
+
+        pkg.lastScanType = scanType;
+        pkg.lastScanNote = scanNote;
+        pkg.scanCount = (pkg.scanCount || 0) + 1;
+
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+            pkg.lastScanLat = lat;
+            pkg.lastScanLng = lng;
+        }
+
+        const missingAccuracyFields = [
+            pkg.packageId,
+            pkg.description,
+            pkg.ownerUsername,
+            pkg.truckId,
+            pkg.pickupLocation,
+            pkg.dropoffLocation,
+            pkg.lastScanType,
+        ].filter((value) => !normalizeString(value)).length;
+        pkg.accuracyScore = Math.max(0, Math.min(100, 100 - (missingAccuracyFields * 12)));
+
+        const trackingContext = await buildTrackingContext(pkg);
+        pkg.route = trackingContext.route._id;
+        pkg.currentFacility = trackingContext.currentFacility._id;
+
+        await pkg.save();
+
+        const handlingEvent = await recordHandlingEvent(pkg, trackingContext, req.currentUser, previousPackage);
+        if (scanNote) {
+            handlingEvent.notes = scanNote;
+            await handlingEvent.save();
+        }
+
+        pkg.lastHandlingEvent = handlingEvent._id;
+        await pkg.save();
+
+        res.status(200).json(pkg);
+    } catch (error) {
+        handlePackageError(res, "scan", error);
+    }
+};
+
 exports.getPackageById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -485,6 +606,50 @@ exports.updatePackage = async (req, res) => {
         res.status(200).json(pkg);
     } catch (error) {
         handlePackageError(res, "update", error);
+    }
+};
+
+exports.getPackageHistory = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(404).json({ message: "Package not found" });
+        }
+
+        const pkg = await Package.findById(id);
+        if (!pkg) {
+            return res.status(404).json({ message: "Package not found" });
+        }
+
+        if (!canAccessPackage(pkg, req.currentUser)) {
+            return res.status(403).json({ message: "You can only view your own package records" });
+        }
+
+        const events = await HandlingEvent.find({ package: pkg._id })
+            .sort({ timeStamp: 1, createdAt: 1 })
+            .populate("facility", "name location")
+            .lean();
+
+        res.status(200).json({
+            package: {
+                packageId: pkg.packageId,
+                description: pkg.description,
+                status: pkg.status,
+                pickupLocation: pkg.pickupLocation,
+                dropoffLocation: pkg.dropoffLocation,
+            },
+            events: events.map((e) => ({
+                id: e._id,
+                eventType: e.eventType,
+                statusSnapshot: e.statusSnapshot,
+                facilityName: e.facility?.name || "Unknown facility",
+                facilityType: e.facility?.location || "",
+                notes: e.notes || "",
+                happenedAt: e.timeStamp,
+            })),
+        });
+    } catch (error) {
+        handlePackageError(res, "get history for", error);
     }
 };
 

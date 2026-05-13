@@ -15,12 +15,25 @@ export const deliveryTypeOptions = [
   { value: 'transfer', label: 'Transfer' },
 ];
 
+export const priorityOptions = [
+  { value: 'standard', label: 'Standard' },
+  { value: 'rush', label: 'Rush' },
+  { value: 'fragile', label: 'Fragile' },
+  { value: 'cold_chain', label: 'Cold Chain' },
+];
+
 export function createPackageForm(overrides = {}) {
   return {
     packageId: '',
     description: '',
     amount: '',
     deliveryType: 'store',
+    priority: 'standard',
+    scanCode: '',
+    customerName: '',
+    customerPhone: '',
+    deliveryWindow: '',
+    deliveryInstructions: '',
     truckId: '',
     pickupLocation: '',
     dropoffLocation: '',
@@ -36,6 +49,12 @@ export function mapPackageToForm(pkg) {
     description: pkg.description ?? '',
     amount: pkg.amount ?? pkg.weight ?? '',
     deliveryType: pkg.deliveryType ?? 'store',
+    priority: pkg.priority ?? 'standard',
+    scanCode: pkg.scanCode ?? '',
+    customerName: pkg.customerName ?? '',
+    customerPhone: pkg.customerPhone ?? '',
+    deliveryWindow: pkg.deliveryWindow ?? '',
+    deliveryInstructions: pkg.deliveryInstructions ?? '',
     truckId: pkg.truckId ?? '',
     pickupLocation: pkg.pickupLocation ?? '',
     dropoffLocation: pkg.dropoffLocation ?? '',
