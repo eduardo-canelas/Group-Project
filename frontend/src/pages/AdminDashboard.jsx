@@ -1,4 +1,5 @@
 import React, { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
+import gsap from 'gsap';
 import { useNavigate } from 'react-router-dom';
 import AIAssistant from '../components/ai-assistant';
 import { AccuracyCommandPanel, RouteMapPanel, ScanConsole } from '../components/logistics-intelligence';
@@ -437,10 +438,18 @@ function AdminDashboard() {
     }
   };
 
+  const scrollToShipmentForm = () => {
+    const form = document.getElementById('shipment-form');
+    if (!form) return;
+    const section = form.closest('.motion-section');
+    if (section) gsap.set(section, { autoAlpha: 1, y: 0 });
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   const handleEdit = (pkg) => {
     setEditingId(pkg._id);
     setFormData(mapPackageToForm(pkg));
-    document.getElementById('shipment-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    scrollToShipmentForm();
   };
 
   const handleDelete = async (id) => {
@@ -957,6 +966,15 @@ function AdminDashboard() {
             </GlassCard>
           </div>
         </div>
+
+        <button
+          type="button"
+          className="admin-add-fab lg:hidden"
+          aria-label="Create new shipment"
+          onClick={scrollToShipmentForm}
+        >
+          + New
+        </button>
       </PageFrame>
     </AppShell>
   );

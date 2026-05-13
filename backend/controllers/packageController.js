@@ -518,6 +518,11 @@ exports.scanPackage = async (req, res) => {
             pkg.lastScanLng = lng;
         }
 
+        const proofPhoto = req.body.proofPhoto;
+        if (proofPhoto && typeof proofPhoto === 'string' && proofPhoto.startsWith('data:image/')) {
+            pkg.proofPhoto = proofPhoto;
+        }
+
         const missingAccuracyFields = [
             pkg.packageId,
             pkg.description,

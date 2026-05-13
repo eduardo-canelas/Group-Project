@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Alert, AppShell, Field, PageFrame, PrimaryButton, SelectInput, TextInput } from '../components/ui';
+import { Alert, Field, SelectInput, TextInput } from '../components/ui';
+import { ThemeToggle } from '../components/theme';
 import { usePageMotion } from '../components/motion';
 import { SeamlessVideo } from '../components/video-device';
 import api from '../lib/api';
@@ -15,78 +16,85 @@ function Register() {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('driver');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const scope = usePageMotion();
 
   const handleRegister = async (event) => {
     event.preventDefault();
     setError('');
+    setLoading(true);
     try {
       await api.post('/auth/register', { username, password, role });
       navigate('/');
     } catch (requestError) {
       setError(requestError.response?.data?.message || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <AppShell className="auth-resend-shell">
-      <PageFrame className="auth-resend-frame">
-        <main ref={scope} className="auth-resend-grid auth-resend-grid-register">
-          <div className="auth-form-side motion-hero">
-            <div className="auth-form-inner">
-              <p className="auth-wordmark">RoutePulse</p>
+    <div ref={scope} className="auth-split auth-split--register">
+      <div className="auth-split-panel auth-split-panel--left motion-hero">
+        <div className="auth-split-top">
+          <Link to="/" className="auth-split-logo">
+            <img src="/routepulse-logo.png" alt="RoutePulse" className="auth-split-logo-img" />
+          </Link>
+          <ThemeToggle />
+        </div>
 
-              <div className="auth-form-heading">
-                <h1>Create access</h1>
-                <p>Choose the workspace role for this user.</p>
-              </div>
-
-              {error ? <Alert tone="error">{error}</Alert> : null}
-
-              <form className="auth-form-fields" onSubmit={handleRegister}>
-                <Field label="Username">
-                  <TextInput
-                    type="text"
-                    value={username}
-                    onChange={(event) => setUsername(event.target.value)}
-                    placeholder="fleet-coordinator"
-                    autoComplete="username"
-                    required
-                  />
-                </Field>
-                <Field label="Password">
-                  <TextInput
-                    type="password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    placeholder="Create a strong password"
-                    autoComplete="new-password"
-                    required
-                  />
-                </Field>
-                <Field label="Role">
-                  <SelectInput value={role} onChange={(event) => setRole(event.target.value)}>
-                    {roles.map((option) => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
-                    ))}
-                  </SelectInput>
-                </Field>
-                <PrimaryButton type="submit" className="w-full">Create account</PrimaryButton>
-              </form>
-
-              <p className="auth-switch-link">
-                Already have access? <Link to="/">Sign in</Link>
-              </p>
-            </div>
+        <div className="auth-split-body">
+          <div className="auth-split-heading">
+            <h1>Create account</h1>
+            <p>Choose a username, password, and role for this workspace.</p>
           </div>
 
-          <div className="auth-resend-visual login-video-panel motion-hero">
-            <SeamlessVideo lightSrc="/register-light.mp4" darkSrc="/register-dark.mp4" />
-          </div>
-        </main>
-      </PageFrame>
-    </AppShell>
+          {error ? <Alert tone="error">{error}</Alert> : null}
+
+          <form className="auth-split-fields" onSubmit={handleRegister}>
+            <Field label="Username">
+              <TextInput
+                type="text"
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+                placeholder="fleet-coordinator"
+                autoComplete="username"
+                required
+              />
+            </Field>
+            <Field label="Password">
+              <TextInput
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="Create a strong password"
+                autoComplete="new-password"
+                required
+              />
+            </Field>
+            <Field label="Role">
+              <SelectInput value={role} onChange={(event) => setRole(event.target.value)}>
+                {roles.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </SelectInput>
+            </Field>
+            <button type="submit" className="auth-split-continue" disabled={loading}>
+              {loading ? 'Creating account…' : <>Continue <span aria-hidden="true">→</span></>}
+            </button>
+          </form>
+        </div>
+
+        <p className="auth-split-foot">
+          Already have access? <Link to="/">Sign in</Link>
+        </p>
+      </div>
+
+      <div className="auth-split-visual motion-hero">
+        <SeamlessVideo lightSrc="/register-light.mp4" darkSrc="/register-dark.mp4" />
+      </div>
+    </div>
   );
 }
 

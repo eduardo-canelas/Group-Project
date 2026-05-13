@@ -306,6 +306,30 @@ export function ScanConsole({ title = 'Scan package', description = 'Scan by pac
     note: '',
   });
   const [scanState, setScanState] = useState({ busy: false, message: '', tone: 'info' });
+  const [proofPhoto, setProofPhoto] = useState(null);
+  const photoInputRef = React.useRef(null);
+
+  const handlePhotoChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const MAX = 800;
+      let { width, height } = img;
+      if (width > MAX || height > MAX) {
+        if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
+        else { width = Math.round(width * MAX / height); height = MAX; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      setProofPhoto(canvas.toDataURL('image/jpeg', 0.6));
+    };
+    img.src = url;
+  };
 
   const updateField = (field) => (event) => {
     setScanForm((current) => ({
@@ -330,6 +354,7 @@ export function ScanConsole({ title = 'Scan package', description = 'Scan by pac
 
     const coords = await captureGPS();
     const payload = coords ? { ...scanForm, lat: coords.lat, lng: coords.lng } : { ...scanForm };
+    if (proofPhoto) payload.proofPhoto = proofPhoto;
 
     try {
       const scanned = await onScan?.(payload);
@@ -338,6 +363,8 @@ export function ScanConsole({ title = 'Scan package', description = 'Scan by pac
         tone: 'success',
         message: `${getScanTypeLabel(scanForm.scanType)} saved for ${scanned?.packageId || scanForm.code}.${coords ? ' Location sent to dispatch.' : ''}`,
       });
+      setProofPhoto(null);
+      if (photoInputRef.current) photoInputRef.current.value = '';
       setScanForm((current) => ({
         ...current,
         code: '',
@@ -390,6 +417,42 @@ export function ScanConsole({ title = 'Scan package', description = 'Scan by pac
         <TextInput value={scanForm.note} onChange={updateField('note')} placeholder="Photo verified, customer signed, shelf count corrected…" autoComplete="off" />
       </Field>
 
+      <div className="scan-photo-zone">
+        <input
+          ref={photoInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          id="scan-photo-input"
+          className="scan-photo-input"
+          onChange={handlePhotoChange}
+        />
+        {proofPhoto ? (
+          <div className="scan-photo-preview-wrap">
+            <img src={proofPhoto} alt="Proof photo preview" className="scan-photo-preview" />
+            <button
+              type="button"
+              className="scan-photo-remove"
+              onClick={() => { setProofPhoto(null); if (photoInputRef.current) photoInputRef.current.value = ''; }}
+              aria-label="Remove photo"
+            >
+              <svg width="12" height="12" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M4 4l12 12M16 4L4 16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+              </svg>
+            </button>
+          </div>
+        ) : (
+          <label htmlFor="scan-photo-input" className="scan-photo-trigger">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <rect x="1" y="4" width="18" height="13" rx="2.5" stroke="currentColor" strokeWidth="1.5"/>
+              <circle cx="10" cy="11" r="3" stroke="currentColor" strokeWidth="1.5"/>
+              <path d="M6.5 4l1.2-2h4.6l1.2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span>Attach proof photo</span>
+          </label>
+        )}
+      </div>
+
       <p className="scan-geo-indicator">
         <svg width="11" height="11" viewBox="0 0 20 20" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
           <path d="M10 2C6.686 2 4 4.686 4 8c0 4.5 6 10 6 10s6-5.5 6-10c0-3.314-2.686-6-6-6zm0 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4z" fill="currentColor" />
@@ -405,7 +468,7 @@ export function ScanConsole({ title = 'Scan package', description = 'Scan by pac
         <PrimaryButton type="submit" disabled={scanState.busy}>
           {scanState.busy ? 'Saving…' : 'Send Scan to Dispatch'}
         </PrimaryButton>
-        <SecondaryButton type="button" onClick={() => setScanForm({ code: '', scanType: 'audit', status: '', currentLocation: defaultLocation, note: '' })}>
+        <SecondaryButton type="button" onClick={() => { setScanForm({ code: '', scanType: 'audit', status: '', currentLocation: defaultLocation, note: '' }); setProofPhoto(null); if (photoInputRef.current) photoInputRef.current.value = ''; }}>
           Clear
         </SecondaryButton>
       </div>

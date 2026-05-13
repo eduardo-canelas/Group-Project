@@ -424,6 +424,17 @@ function DriverLoadLedger({ packages = [], loadingId, onUpdateStatus, focusedPac
                     loadingId={loadingId}
                     onUpdateStatus={onUpdateStatus}
                   />
+
+                  {pkg.proofPhoto ? (
+                    <div className="driver-proof-photo-wrap">
+                      <p className="driver-load-callout-label">Proof photo</p>
+                      <img
+                        src={pkg.proofPhoto}
+                        alt="Delivery proof"
+                        className="driver-proof-photo"
+                      />
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
@@ -833,11 +844,9 @@ function DriverDashboard() {
   const scrollToUpdateWorkspace = () => {
     const el = updateWorkspaceRef.current;
     if (!el) return;
+    gsap.set(el, { autoAlpha: 1, y: 0 });
     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    setTimeout(() => {
-      ScrollTrigger.refresh();
-      gsap.to(el, { autoAlpha: 1, y: 0, duration: 0.35, ease: 'power2.out', overwrite: 'auto' });
-    }, 380);
+    setTimeout(() => ScrollTrigger.refresh(), 380);
   };
 
   const focusPackage = (packageKey) => {
@@ -905,6 +914,69 @@ function DriverDashboard() {
                 onJumpToWorkspace={scrollToUpdateWorkspace}
                 onFocusPackage={focusPackage}
               />
+            </div>
+
+            <div className="dashboard-stack driver-right-stack">
+              <GlassCard className="motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-ledger">
+                <div className="dashboard-scroll-region dashboard-scroll-region-flow dashboard-scroll-fill">
+                  <div className="grid gap-5">
+                    <ScanConsole
+                      title="Driver package scan"
+                      description="Scan at pickup, truck load, customer door, or exception stop so dispatch knows the real package state."
+                      defaultLocation={currentUser?.username ? `${currentUser.username} route` : 'Driver route'}
+                      onScan={handleScan}
+                    />
+                    <RouteMapPanel
+                      packages={loadBoardFilteredPackages.length ? loadBoardFilteredPackages : packages}
+                      title="Current route map"
+                      description="Tap Navigate for turn-by-turn directions. Mark status updates inline."
+                      onUpdateStatus={handleUpdateStatus}
+                      loadingId={loadingId}
+                    />
+                  </div>
+                </div>
+              </GlassCard>
+
+              <GlassCard className="shift-guide-card motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-primary driver-support-panel">
+                <SectionHeading
+                  kicker="Driver Support"
+                  title="Action Center"
+                  description="In-transit and open loads stay here so drivers can make the next update fast."
+                />
+
+                <div className="mt-5 grid gap-4 flex-1 min-h-0">
+                  <SurfacePanel className="motion-card load-board-shell flex flex-col p-4 sm:p-5">
+                    <div className="driver-inline-section driver-inline-section-no-divider dashboard-scroll-region dashboard-scroll-region-support dashboard-scroll-fill driver-support-panel-content flex-1 min-h-0">
+                      <DriverActionCenter
+                        items={actionQueue}
+                        checklist={shiftGuide}
+                        loadingId={loadingId}
+                        onFocusPacket={focusPackage}
+                        onJumpToWorkspace={scrollToUpdateWorkspace}
+                        onAskAssistant={useFollowUpPrompt}
+                        onUpdateStatus={handleUpdateStatus}
+                      />
+                    </div>
+                  </SurfacePanel>
+                </div>
+              </GlassCard>
+
+              <GlassCard className="motion-section p-5 sm:p-6">
+                <AccuracyCommandPanel packages={packages} title="Your delivery accuracy" />
+              </GlassCard>
+
+              <GlassCard className="motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-ledger lg:hidden">
+                <div className="dashboard-scroll-region dashboard-scroll-region-flow dashboard-scroll-fill">
+                  <LogisticsFlowBoard
+                    title="Route Flow"
+                    description="Live progress for the loads on your shift."
+                    lanes={flowLanes}
+                    summary={flowSummary}
+                    emptyTitle="No active routes"
+                    emptyDescription=""
+                  />
+                </div>
+              </GlassCard>
             </div>
 
             <div className="dashboard-stack driver-left-stack">
@@ -1022,69 +1094,6 @@ function DriverDashboard() {
                 </div>
               </GlassCard>
 
-            </div>
-
-            <div className="dashboard-stack driver-right-stack">
-              <GlassCard className="motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-ledger">
-                <div className="dashboard-scroll-region dashboard-scroll-region-flow dashboard-scroll-fill">
-                  <div className="grid gap-5">
-                    <ScanConsole
-                      title="Driver package scan"
-                      description="Scan at pickup, truck load, customer door, or exception stop so dispatch knows the real package state."
-                      defaultLocation={currentUser?.username ? `${currentUser.username} route` : 'Driver route'}
-                      onScan={handleScan}
-                    />
-                    <RouteMapPanel
-                      packages={loadBoardFilteredPackages.length ? loadBoardFilteredPackages : packages}
-                      title="Current route map"
-                      description="Tap Navigate for turn-by-turn directions. Mark status updates inline."
-                      onUpdateStatus={handleUpdateStatus}
-                      loadingId={loadingId}
-                    />
-                  </div>
-                </div>
-              </GlassCard>
-
-              <GlassCard className="shift-guide-card motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-primary driver-support-panel">
-                <SectionHeading
-                  kicker="Driver Support"
-                  title="Action Center"
-                  description="In-transit and open loads stay here so drivers can make the next update fast."
-                />
-
-                <div className="mt-5 grid gap-4 flex-1 min-h-0">
-                  <SurfacePanel className="motion-card load-board-shell flex flex-col p-4 sm:p-5">
-                    <div className="driver-inline-section driver-inline-section-no-divider dashboard-scroll-region dashboard-scroll-region-support dashboard-scroll-fill driver-support-panel-content flex-1 min-h-0">
-                      <DriverActionCenter
-                        items={actionQueue}
-                        checklist={shiftGuide}
-                        loadingId={loadingId}
-                        onFocusPacket={focusPackage}
-                        onJumpToWorkspace={scrollToUpdateWorkspace}
-                        onAskAssistant={useFollowUpPrompt}
-                        onUpdateStatus={handleUpdateStatus}
-                      />
-                    </div>
-                  </SurfacePanel>
-                </div>
-              </GlassCard>
-
-              <GlassCard className="motion-section p-5 sm:p-6">
-                <AccuracyCommandPanel packages={packages} title="Your delivery accuracy" />
-              </GlassCard>
-
-              <GlassCard className="motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-ledger lg:hidden">
-                <div className="dashboard-scroll-region dashboard-scroll-region-flow dashboard-scroll-fill">
-                  <LogisticsFlowBoard
-                    title="Route Flow"
-                    description="Live progress for the loads on your shift."
-                    lanes={flowLanes}
-                    summary={flowSummary}
-                    emptyTitle="No active routes"
-                    emptyDescription=""
-                  />
-                </div>
-              </GlassCard>
             </div>
           </div>
 

@@ -56,6 +56,7 @@ const packageSchema = new mongoose.Schema({
     accuracyScore: { type: Number, min: 0, max: 100 },
     lastScanLat: { type: Number },
     lastScanLng: { type: Number },
+    proofPhoto: { type: String },
 }, { timestamps: true });
 
 module.exports = mongoose.model("Package", packageSchema);
