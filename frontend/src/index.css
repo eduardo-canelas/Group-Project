@@ -2652,6 +2652,7 @@
   min-height: 100dvh;
 }
 
+
 .auth-split-visual .seamless-video-wrap {
   position: absolute;
   inset: 0;
@@ -2842,13 +2843,27 @@
   .auth-split-visual {
     min-height: 38dvh;
     flex: none;
+    position: relative;
+  }
+
+  .auth-split-visual::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 5rem;
+    background: linear-gradient(to bottom, transparent, oklch(99% 0.003 220));
+    pointer-events: none;
+  }
+
+  :root[data-theme='dark'] .auth-split-visual::after {
+    background: linear-gradient(to bottom, transparent, oklch(15.5% 0.02 230));
   }
 
   .auth-split-panel {
     flex: none;
     border-left: none;
-    border-top: 1px solid oklch(90% 0.006 220);
-    padding: 1.5rem 1.25rem;
+    border-top: none;
+    padding: 1.25rem 1.5rem max(1.75rem, calc(1.25rem + env(safe-area-inset-bottom)));
     min-height: 62dvh;
   }
 
@@ -2856,8 +2871,26 @@
     border-top-color: oklch(22% 0.02 230);
   }
 
+  .auth-split--register .auth-split-panel--left {
+    padding-top: max(1.5rem, env(safe-area-inset-top));
+    border-bottom: 1px solid oklch(90% 0.006 220);
+  }
+
+  :root[data-theme='dark'] .auth-split--register .auth-split-panel--left {
+    border-bottom-color: oklch(22% 0.02 230);
+  }
+
   .auth-split-body {
-    padding-block: 1.5rem;
+    padding-block: 1.25rem;
+  }
+
+  .auth-split-top {
+    margin-bottom: 0;
+    padding-bottom: 0.5rem;
+  }
+
+  .auth-split-foot {
+    padding-top: 1rem;
   }
 }
 
