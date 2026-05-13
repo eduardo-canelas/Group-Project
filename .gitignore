@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+build/
+
+# AI agent folders
+.claude/
+.claire/
+.planning/
+docs/
+
+# Planning & script markdown (keep README.md)
+5minScroipt.md
+AGENTS.md
+BACKEND.md
+comment-questions-simple.md
+DEMO\ FINAL\ SCRIPT.md
+DEMO\ FLOW\ GUIDE.md
+DEMO_SCRIPT_IMPROVED.md
+DESIGN.md
+DETAILED_TEAM_SCRIPTS.md
+FINAL\ FINAL\ FINAL\ SCRIPTS.md
+FINAL_DEMO_SCRIPT.md
+final-scripts.md
+HANDLING_EVENTS_BACKEND_EXPLAINED.md
+LAST\ FINAL\ SCRIPT.md
+MANY_TO_MANY_DEMO_TUTORIAL.md
+PRESENTATION_FINAL_REWORK.md
+PRESENTATION_SCRIPTS.md
+PRODUCT.md
+SCRIPTS.md
+SLIDE_4_SPLIT_REWORK.md
+slides.md
+SPEAKER_NOTES.md
+STYLING_SCRIPT.md
+TEAM_SPEAKER_CHEATSHEET.md
+THE\ FINAL\ SCRIPT.md
+
+# Media & assets
+*.mp4
+*.pdf
+*.png
+slides/
+
+# OS
+.DS_Store
