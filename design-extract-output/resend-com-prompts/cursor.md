@@ -1,0 +1,33 @@
+# Design brief
+Page type: **landing**.
+Material language: **flat**.
+Voice: Tone: neutral · Headings: Sentence case · CTA verbs: [object Object], [object Object], [object Object], [object Object], [object Object], [object Object].
+## Tokens
+```ts
+export const tokens = {
+  colors: ['#f0f0f0', '#a1a4a5', '#ffffff', '#f1f7fe', '#464a4d', '#6c6c6c', '#d6ebfd', '#46fea5', '#000000', '#e5edfd', '#ffff92', '#70757e', '#ff9592', '#3b9eff'],
+  fonts: ['[object Object]', '[object Object]', '[object Object]', '[object Object]'],
+  radii: ['4', '8', '12', '16', '24'],
+  shadows: ['rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.1) 0px 1px 3px 0px, rgba(0, 0, 0, 0.1) 0px 1px 2px -1px', 'rgb(0, 0, 0) 0px 0px 0px 8px', 'rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(176, 199, 217, 0.145) 0px 0px 0px 1px, rgba(0, 0, 0, 0) 0px 0px 0px 0px'],
+};
+```
+## Sections
+- feature-grid
+- hero — heading: "Email for
+developers"
+- hero — heading: "Integrate this morning"
+- footer
+- testimonial — heading: "First-class
+developer experience"
+- hero — heading: "Write using a delightful editor"
+- testimonial — heading: "Develop emails using React"
+- sidebar
+- hero — heading: "Reach humans, not spam folders"
+- feature-grid — heading: "Everything in your control"
+- testimonial — heading: "Beyond expectations"
+- cta — heading: "Email reimagined.
+Available today."
+- footer
+## Library
+
+Use shadcn/ui components (Button, Card, Dialog, Input, Sheet, Tabs). Pair with Tailwind.

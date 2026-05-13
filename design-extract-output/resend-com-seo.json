@@ -1,0 +1,96 @@
+{
+  "openGraph": {
+    "title": "Resend · Email for developers",
+    "description": "The best way to reach humans instead of spam folders. Deliver transactional and marketing emails at scale.",
+    "image": "https://resend.com/static/cover.png"
+  },
+  "twitter": {
+    "card": "summary_large_image",
+    "title": "Resend · Email for developers",
+    "description": "The best way to reach humans instead of spam folders. Deliver transactional and marketing emails at scale.",
+    "image": "https://resend.com/static/cover.png"
+  },
+  "description": "The best way to reach humans instead of spam folders. Deliver transactional and marketing emails at scale.",
+  "canonical": null,
+  "themeColor": "#000000",
+  "viewport": "width=device-width, initial-scale=1",
+  "favicons": [
+    {
+      "rel": "shortcut icon",
+      "href": "https://resend.com/static/favicons/favicon-marketing.ico?v=1",
+      "sizes": "",
+      "type": ""
+    },
+    {
+      "rel": "icon",
+      "href": "https://resend.com/static/favicons/favicon-marketing.ico?v=1",
+      "sizes": "",
+      "type": ""
+    },
+    {
+      "rel": "apple-touch-icon",
+      "href": "https://resend.com/static/favicons/favicon-marketing@57x57.png?v=1",
+      "sizes": "57x57",
+      "type": ""
+    },
+    {
+      "rel": "apple-touch-icon",
+      "href": "https://resend.com/static/favicons/favicon-marketing@60x60.png?v=1",
+      "sizes": "60x60",
+      "type": ""
+    },
+    {
+      "rel": "apple-touch-icon",
+      "href": "https://resend.com/static/favicons/favicon-marketing@72x72.png?v=1",
+      "sizes": "72x72",
+      "type": ""
+    },
+    {
+      "rel": "apple-touch-icon",
+      "href": "https://resend.com/static/favicons/favicon-marketing@76x76.png?v=1",
+      "sizes": "76x76",
+      "type": ""
+    },
+    {
+      "rel": "apple-touch-icon",
+      "href": "https://resend.com/static/favicons/favicon-marketing@114x114.png?v=1",
+      "sizes": "114x114",
+      "type": ""
+    },
+    {
+      "rel": "apple-touch-icon",
+      "href": "https://resend.com/static/favicons/favicon-marketing@120x120.png?v=1",
+      "sizes": "120x120",
+      "type": ""
+    },
+    {
+      "rel": "apple-touch-icon",
+      "href": "https://resend.com/static/favicons/favicon-marketing@144x144.png?v=1",
+      "sizes": "144x144",
+      "type": ""
+    },
+    {
+      "rel": "apple-touch-icon",
+      "href": "https://resend.com/static/favicons/favicon-marketing@152x152.png?v=1",
+      "sizes": "152x152",
+      "type": ""
+    }
+  ],
+  "manifest": null,
+  "structuredData": [
+    {
+      "type": "Thing",
+      "name": null,
+      "sample": "{\"@context\":\"https://schema.org\",\"@graph\":[{\"@type\":\"Organization\",\"@id\":\"https://resend.com/#organization\",\"name\":\"Resend\",\"url\":\"https://resend.com/\",\"logo\":\"https://upload.wikimedia.org/wikipedia/commons/d/da/Resend_Logo.svg\",\"description\":\"Email API for developers\",\"foundingDate\":\"2022\",\"sameAs\":[\"https://www.wikidata.org/wiki/Q123921042\",\"https://www.youtube.com/@resendlabs\",\"https://www.link"
+    }
+  ],
+  "score": {
+    "hasOg": true,
+    "hasTwitter": true,
+    "hasDescription": true,
+    "hasCanonical": false,
+    "hasStructuredData": true,
+    "hasFavicon": true,
+    "hasThemeColor": true
+  }
+}

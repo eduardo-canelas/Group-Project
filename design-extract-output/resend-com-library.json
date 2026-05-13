@@ -1,0 +1,22 @@
+{
+  "library": "shadcn/ui",
+  "confidence": 0.65,
+  "evidence": [
+    "shadcn css tokens"
+  ],
+  "alternates": [
+    {
+      "id": "tailwindcss",
+      "score": 0.3,
+      "evidence": [
+        "tailwind-like class density 64%"
+      ]
+    }
+  ],
+  "signals": {
+    "tailwindLike": 0.638,
+    "radixAttrCount": 0,
+    "classSampleSize": 469
+  },
+  "needsSmart": false
+}

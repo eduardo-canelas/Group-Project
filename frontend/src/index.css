@@ -3617,3 +3617,246 @@
     transform: translate(-50%, -50%) !important;
   }
 }
+
+/* ── Login page (lp-) ────────────────────────────────────────────────────── */
+/* Standalone split layout. No AppShell. Always light mode.                   */
+
+.lp-root {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  min-height: 100svh;
+  background: oklch(99% 0.003 222);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Left: full-bleed video */
+.lp-media {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Override the themed fade — clean bottom-only scrim so logo reads */
+.lp-media .seamless-video-fade {
+  background:
+    linear-gradient(
+      180deg,
+      oklch(8% 0.01 222 / 0.1) 0%,
+      transparent 20%,
+      transparent 64%,
+      oklch(8% 0.01 222 / 0.52) 100%
+    );
+}
+
+.lp-media-brand {
+  position: absolute;
+  bottom: 2rem;
+  left: 2rem;
+  z-index: 2;
+}
+
+.lp-media-logo {
+  display: block;
+  height: 1.625rem;
+  width: auto;
+  filter: brightness(0) invert(1);
+  opacity: 0.88;
+}
+
+/* Right: form panel */
+.lp-panel {
+  background: oklch(99.8% 0.001 222);
+  border-left: 1px solid oklch(91% 0.007 222);
+  display: flex;
+  flex-direction: column;
+}
+
+.lp-panel-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 2rem 2.5rem;
+}
+
+/* Header: mark + wordmark */
+.lp-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid oklch(91% 0.007 222);
+}
+
+.lp-mark {
+  display: block;
+  height: 1.375rem;
+  width: auto;
+}
+
+.lp-mark-label {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  color: oklch(11% 0.008 222);
+}
+
+/* Form body — vertically centered */
+.lp-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2.5rem 0;
+  max-width: 320px;
+}
+
+.lp-heading-block {
+  margin-bottom: 1.875rem;
+}
+
+.lp-heading {
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: oklch(11% 0.008 222);
+  line-height: 1.05;
+  margin: 0 0 0.5rem;
+}
+
+.lp-subtext {
+  font-size: 0.875rem;
+  color: oklch(53% 0.009 222);
+  line-height: 1.55;
+  max-width: 36ch;
+}
+
+.lp-error {
+  margin-bottom: 1.25rem;
+  border-radius: 8px;
+  border: 1px solid oklch(85% 0.04 18);
+  background: oklch(97.5% 0.012 18);
+  padding: 0.75rem 1rem;
+  font-size: 0.8125rem;
+  color: oklch(38% 0.14 18);
+  line-height: 1.45;
+}
+
+.lp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.125rem;
+}
+
+.lp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.lp-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: oklch(22% 0.007 222);
+}
+
+.lp-input {
+  width: 100%;
+  background: oklch(99.5% 0.002 222);
+  border: 1px solid oklch(87% 0.009 222);
+  border-radius: 8px;
+  padding: 0.625rem 0.875rem;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  color: oklch(11% 0.008 222);
+  outline: none;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.lp-input::placeholder {
+  color: oklch(71% 0.006 222);
+}
+
+.lp-input:focus {
+  border-color: oklch(64% 0.19 222);
+  box-shadow: 0 0 0 3px oklch(64% 0.19 222 / 0.13);
+}
+
+.lp-submit {
+  margin-top: 0.375rem;
+  width: 100%;
+  background: oklch(11% 0.008 222);
+  color: oklch(98.5% 0.002 222);
+  border: none;
+  border-radius: 8px;
+  padding: 0.6875rem 1.25rem;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: background 140ms ease, transform 150ms ease;
+}
+
+.lp-submit:hover {
+  background: oklch(19% 0.007 222);
+  transform: translateY(-1px);
+}
+
+.lp-submit:active {
+  transform: none;
+}
+
+.lp-submit:focus-visible {
+  outline: 2px solid oklch(64% 0.19 222);
+  outline-offset: 2px;
+}
+
+/* Footer */
+.lp-panel-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid oklch(91% 0.007 222);
+}
+
+.lp-footer-text {
+  font-size: 0.8125rem;
+  color: oklch(55% 0.008 222);
+}
+
+.lp-footer-link {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: oklch(11% 0.008 222);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: oklch(80% 0.009 222);
+  transition: color 140ms ease, text-decoration-color 140ms ease;
+}
+
+.lp-footer-link:hover {
+  color: oklch(55% 0.19 222);
+  text-decoration-color: oklch(55% 0.19 222 / 0.45);
+}
+
+/* Responsive: stack on narrow viewports */
+@media (max-width: 768px) {
+  .lp-root {
+    grid-template-columns: 1fr;
+    grid-template-rows: 42svh 1fr;
+  }
+
+  .lp-panel {
+    border-left: none;
+    border-top: 1px solid oklch(91% 0.007 222);
+  }
+
+  .lp-body {
+    padding: 2rem 0;
+    max-width: none;
+  }
+}

@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Alert, AppShell, Field, GlassCard, PageFrame, PrimaryButton, SecondaryButton, SectionHeading, TextInput } from '../components/ui';
-import { usePageMotion } from '../components/motion';
 import { SeamlessVideo } from '../components/video-device';
+import { ThemeToggle, useTheme } from '../components/theme';
 import api from '../lib/api';
 
 function Login() {
@@ -10,7 +9,11 @@ function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const scope = usePageMotion();
+  const { setTheme } = useTheme();
+
+  useEffect(() => {
+    setTheme('light');
+  }, [setTheme]);
 
   const handleLogin = async (event) => {
     event.preventDefault();
@@ -20,65 +23,79 @@ function Login() {
       localStorage.setItem('user', JSON.stringify(response.data));
       navigate(response.data.role === 'admin' ? '/admin' : '/driver');
     } catch (requestError) {
-      setError(requestError.response?.data?.message || 'Login failed. Please check your credentials.');
+      setError(requestError.response?.data?.message || 'Login failed. Check your credentials.');
     }
   };
 
   return (
-    <AppShell>
-      <PageFrame className="py-6 lg:py-10">
-        <div ref={scope} className="grid gap-6 lg:min-h-[calc(100vh-8rem)] lg:grid-cols-[1.22fr_0.78fr]">
-          <div className="login-video-panel order-1 surface-card motion-hero">
-            <SeamlessVideo />
-          </div>
+    <div className="lp-root">
+      <div className="lp-media">
+        <SeamlessVideo />
+        <div className="lp-media-brand">
+          <img src="/routepulse-logo.png" alt="RoutePulse" className="lp-media-logo" />
+        </div>
+      </div>
 
-          <GlassCard className="order-2 motion-hero flex items-center p-6 sm:p-8 lg:p-10">
-            <div className="w-full">
-              <div className="mb-6">
-                <SectionHeading
-                  as="h1"
-                  kicker="Secure entry"
-                  title="Enter RoutePulse"
+      <div className="lp-panel">
+        <div className="lp-panel-inner">
+          <header className="lp-panel-header">
+            <img src="/routepulse-mark.png" alt="" className="lp-mark" aria-hidden="true" />
+            <span className="lp-mark-label">RoutePulse</span>
+          </header>
+
+          <main className="lp-body">
+            <div className="lp-heading-block">
+              <h1 className="lp-heading">Sign in</h1>
+              <p className="lp-subtext">Enter your credentials to access RoutePulse.</p>
+            </div>
+
+            {error ? (
+              <div className="lp-error" role="alert">{error}</div>
+            ) : null}
+
+            <form className="lp-form" onSubmit={handleLogin}>
+              <div className="lp-field">
+                <label className="lp-label" htmlFor="lp-username">Username</label>
+                <input
+                  id="lp-username"
+                  className="lp-input"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="dispatcher-main"
+                  autoComplete="username"
+                  required
                 />
               </div>
-
-              {error ? <Alert tone="error">{error}</Alert> : null}
-
-              <form className="mt-7 space-y-5" onSubmit={handleLogin}>
-                <Field label="Username">
-                  <TextInput
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="dispatcher-main"
-                    autoComplete="username"
-                    required
-                  />
-                </Field>
-                <Field label="Password">
-                  <TextInput
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Your password"
-                    autoComplete="current-password"
-                    required
-                  />
-                </Field>
-                <PrimaryButton type="submit" className="w-full">Enter workspace</PrimaryButton>
-              </form>
-
-              <div className="mt-6 flex flex-wrap items-center justify-end gap-3 border-t border-[color:var(--border)] pt-6">
-                <Link to="/register">
-                  <SecondaryButton type="button">Create account</SecondaryButton>
-                </Link>
+              <div className="lp-field">
+                <label className="lp-label" htmlFor="lp-password">Password</label>
+                <input
+                  id="lp-password"
+                  className="lp-input"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  required
+                />
               </div>
-            </div>
-          </GlassCard>
+              <button type="submit" className="lp-submit">
+                Continue
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+                  <path d="M2.5 7.5h10M9 4l3.5 3.5L9 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </form>
+          </main>
 
+          <footer className="lp-panel-footer">
+            <span className="lp-footer-text">New to RoutePulse?</span>
+            <Link to="/register" className="lp-footer-link">Create account</Link>
+          </footer>
         </div>
-      </PageFrame>
-    </AppShell>
+      </div>
+    </div>
   );
 }
 

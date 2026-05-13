@@ -1,0 +1,126 @@
+{
+  "tone": "neutral",
+  "pronoun": "you-only",
+  "headingStyle": "Sentence case",
+  "headingLengthClass": "tight",
+  "ctaVerbs": [
+    {
+      "value": "get",
+      "count": 4
+    },
+    {
+      "value": "node",
+      "count": 2
+    },
+    {
+      "value": "user",
+      "count": 2
+    },
+    {
+      "value": "features",
+      "count": 1
+    },
+    {
+      "value": "company",
+      "count": 1
+    },
+    {
+      "value": "resources",
+      "count": 1
+    },
+    {
+      "value": "help",
+      "count": 1
+    },
+    {
+      "value": "docs",
+      "count": 1
+    },
+    {
+      "value": "ai",
+      "count": 1
+    },
+    {
+      "value": "serverless",
+      "count": 1
+    }
+  ],
+  "buttonPatterns": [
+    {
+      "value": "get started",
+      "count": 4
+    },
+    {
+      "value": "node.js",
+      "count": 2
+    },
+    {
+      "value": "features",
+      "count": 1
+    },
+    {
+      "value": "company",
+      "count": 1
+    },
+    {
+      "value": "resources",
+      "count": 1
+    },
+    {
+      "value": "help",
+      "count": 1
+    },
+    {
+      "value": "docs",
+      "count": 1
+    },
+    {
+      "value": "ai",
+      "count": 1
+    },
+    {
+      "value": "serverless",
+      "count": 1
+    },
+    {
+      "value": "ruby",
+      "count": 1
+    },
+    {
+      "value": "python",
+      "count": 1
+    },
+    {
+      "value": "php",
+      "count": 1
+    },
+    {
+      "value": "cli",
+      "count": 1
+    },
+    {
+      "value": "go",
+      "count": 1
+    },
+    {
+      "value": "rust",
+      "count": 1
+    }
+  ],
+  "sampleHeadings": [
+    "Email for\ndevelopers",
+    "Integrate this morning",
+    "First-class\ndeveloper experience",
+    "Test mode",
+    "Modular webhooks",
+    "Write using a delightful editor",
+    "Go beyond editing",
+    "Contact management",
+    "Broadcast analytics",
+    "Develop emails using React"
+  ],
+  "stats": {
+    "buttons": 49,
+    "headings": 15
+  }
+}

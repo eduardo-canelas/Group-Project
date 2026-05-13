@@ -1,0 +1,447 @@
+{
+  "pageIntent": {
+    "type": "landing",
+    "confidence": 0.31,
+    "path": "/",
+    "title": "Resend · Email for developers",
+    "description": "The best way to reach humans instead of spam folders. Deliver transactional and marketing emails at scale.",
+    "signals": [
+      {
+        "kind": "dom",
+        "type": "blog-post",
+        "weight": 0.35,
+        "detail": "byline|min-read"
+      },
+      {
+        "kind": "url",
+        "type": "landing",
+        "weight": 0.45,
+        "detail": "root-path"
+      }
+    ],
+    "alternates": [
+      {
+        "type": "blog-post",
+        "score": 0.35
+      }
+    ],
+    "needsSmart": true
+  },
+  "sectionRoles": {
+    "sections": [
+      {
+        "index": 0,
+        "tag": "header",
+        "role": "feature-grid",
+        "subrole": null,
+        "confidence": 0.8,
+        "heading": null,
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "w": 1280,
+          "h": 59
+        },
+        "buttonCount": 8,
+        "cardCount": 21,
+        "slots": {
+          "ctaCount": 8,
+          "lede": "Features\nCompany\nResources\nHelp\nDocs\nAI\nPricing\nLog in\nGet started"
+        },
+        "needsSmart": false
+      },
+      {
+        "index": 1,
+        "tag": "section",
+        "role": "hero",
+        "subrole": null,
+        "confidence": 0.85,
+        "heading": "Email for\ndevelopers",
+        "bounds": {
+          "x": 0,
+          "y": 59,
+          "w": 1280,
+          "h": 800
+        },
+        "buttonCount": 1,
+        "cardCount": 7,
+        "slots": {
+          "heading": "Email for\ndevelopers",
+          "ctaCount": 1,
+          "lede": "Announcing Resend Forward\nEmail for\ndevelopers"
+        },
+        "needsSmart": false
+      },
+      {
+        "index": 2,
+        "tag": "section",
+        "role": "content",
+        "subrole": null,
+        "confidence": 0.3,
+        "heading": null,
+        "bounds": {
+          "x": 0,
+          "y": 939,
+          "w": 1280,
+          "h": 479
+        },
+        "buttonCount": 0,
+        "cardCount": 14,
+        "slots": {
+          "lede": "Companies of all sizes trust Resend to deliver their most important emails."
+        },
+        "needsSmart": true
+      },
+      {
+        "index": 3,
+        "tag": "section",
+        "role": "hero",
+        "subrole": null,
+        "confidence": 0.4,
+        "heading": "Integrate this morning",
+        "bounds": {
+          "x": 0,
+          "y": 1418,
+          "w": 1280,
+          "h": 1295.59375
+        },
+        "buttonCount": 23,
+        "cardCount": 54,
+        "slots": {
+          "heading": "Integrate this morning",
+          "ctaCount": 23
+        },
+        "needsSmart": true
+      },
+      {
+        "index": 4,
+        "tag": "header",
+        "role": "nav",
+        "subrole": null,
+        "confidence": 0.4,
+        "heading": null,
+        "bounds": {
+          "x": 129,
+          "y": 2020.59375,
+          "w": 1022,
+          "h": 64
+        },
+        "buttonCount": 10,
+        "cardCount": 23,
+        "slots": {
+          "ctaCount": 10,
+          "lede": "Node.js\nNext.js\nRemix\nNuxt\nExpress\nHono\nRedwood\nBun\nAstro"
+        },
+        "needsSmart": true
+      },
+      {
+        "index": 5,
+        "tag": "footer",
+        "role": "footer",
+        "subrole": null,
+        "confidence": 0.95,
+        "heading": null,
+        "bounds": {
+          "x": 129,
+          "y": 2560.59375,
+          "w": 1004,
+          "h": 56
+        },
+        "buttonCount": 0,
+        "cardCount": 2,
+        "slots": {
+          "lede": "View on GitHub\nDownload ZIP"
+        },
+        "needsSmart": false
+      },
+      {
+        "index": 6,
+        "tag": "section",
+        "role": "testimonial",
+        "subrole": null,
+        "confidence": 0.8,
+        "heading": "First-class\ndeveloper experience",
+        "bounds": {
+          "x": 0,
+          "y": 2713.59375,
+          "w": 1280,
+          "h": 974.578125
+        },
+        "buttonCount": 2,
+        "cardCount": 50,
+        "slots": {
+          "heading": "First-class\ndeveloper experience",
+          "subheadings": [
+            "Test mode",
+            "Modular webhooks"
+          ],
+          "ctaCount": 2
+        },
+        "needsSmart": false
+      },
+      {
+        "index": 7,
+        "tag": "section",
+        "role": "hero",
+        "subrole": null,
+        "confidence": 0.4,
+        "heading": "Write using a delightful editor",
+        "bounds": {
+          "x": 0,
+          "y": 3688.171875,
+          "w": 1280,
+          "h": 1358.203125
+        },
+        "buttonCount": 1,
+        "cardCount": 7,
+        "slots": {
+          "heading": "Write using a delightful editor",
+          "ctaCount": 1
+        },
+        "needsSmart": true
+      },
+      {
+        "index": 8,
+        "tag": "section",
+        "role": "content",
+        "subrole": null,
+        "confidence": 0.3,
+        "heading": "Go beyond editing",
+        "bounds": {
+          "x": 0,
+          "y": 5046.375,
+          "w": 1280,
+          "h": 899.375
+        },
+        "buttonCount": 0,
+        "cardCount": 0,
+        "slots": {
+          "heading": "Go beyond editing",
+          "subheadings": [
+            "Contact management",
+            "Broadcast analytics"
+          ]
+        },
+        "needsSmart": true
+      },
+      {
+        "index": 9,
+        "tag": "section",
+        "role": "testimonial",
+        "subrole": null,
+        "confidence": 0.8,
+        "heading": "Develop emails using React",
+        "bounds": {
+          "x": 0,
+          "y": 5945.75,
+          "w": 1280,
+          "h": 1367.203125
+        },
+        "buttonCount": 7,
+        "cardCount": 14,
+        "slots": {
+          "heading": "Develop emails using React",
+          "subheadings": [
+            "Welcome to ACME, user!"
+          ],
+          "ctaCount": 7
+        },
+        "needsSmart": false
+      },
+      {
+        "index": 10,
+        "tag": "header",
+        "role": "nav",
+        "subrole": null,
+        "confidence": 0.4,
+        "heading": null,
+        "bounds": {
+          "x": 25,
+          "y": 6517.953125,
+          "w": 1230,
+          "h": 48
+        },
+        "buttonCount": 2,
+        "cardCount": 7,
+        "slots": {
+          "ctaCount": 2
+        },
+        "needsSmart": true
+      },
+      {
+        "index": 11,
+        "tag": "aside",
+        "role": "sidebar",
+        "subrole": null,
+        "confidence": 0.4,
+        "heading": null,
+        "bounds": {
+          "x": 25,
+          "y": 6565.953125,
+          "w": 200,
+          "h": 650
+        },
+        "buttonCount": 4,
+        "cardCount": 4,
+        "slots": {
+          "ctaCount": 4,
+          "lede": "user-welcome.tsx\nreset-password.tsx\nuser-invite.tsx\nweekly-digest.tsx"
+        },
+        "needsSmart": true
+      },
+      {
+        "index": 12,
+        "tag": "section",
+        "role": "hero",
+        "subrole": null,
+        "confidence": 0.4,
+        "heading": "Reach humans, not spam folders",
+        "bounds": {
+          "x": 0,
+          "y": 7312.953125,
+          "w": 1280,
+          "h": 940.921875
+        },
+        "buttonCount": 8,
+        "cardCount": 9,
+        "slots": {
+          "heading": "Reach humans, not spam folders",
+          "ctaCount": 8,
+          "lede": "Reach humans, not spam folders\nProactive blocklist tracking"
+        },
+        "needsSmart": true
+      },
+      {
+        "index": 13,
+        "tag": "section",
+        "role": "feature-grid",
+        "subrole": null,
+        "confidence": 0.8,
+        "heading": "Everything in your control",
+        "bounds": {
+          "x": 0,
+          "y": 8885.265625,
+          "w": 1280,
+          "h": 1351.125
+        },
+        "buttonCount": 3,
+        "cardCount": 9,
+        "slots": {
+          "heading": "Everything in your control",
+          "ctaCount": 3
+        },
+        "needsSmart": false
+      },
+      {
+        "index": 14,
+        "tag": "section",
+        "role": "testimonial",
+        "subrole": null,
+        "confidence": 0.8,
+        "heading": "Beyond expectations",
+        "bounds": {
+          "x": 0,
+          "y": 10236.390625,
+          "w": 1280,
+          "h": 660.9375
+        },
+        "buttonCount": 0,
+        "cardCount": 121,
+        "slots": {
+          "heading": "Beyond expectations"
+        },
+        "needsSmart": false
+      },
+      {
+        "index": 15,
+        "tag": "section",
+        "role": "cta",
+        "subrole": null,
+        "confidence": 0.75,
+        "heading": "Email reimagined.\nAvailable today.",
+        "bounds": {
+          "x": 0,
+          "y": 10897.328125,
+          "w": 1280,
+          "h": 767.59375
+        },
+        "buttonCount": 1,
+        "cardCount": 2,
+        "slots": {
+          "heading": "Email reimagined.\nAvailable today.",
+          "ctaCount": 1,
+          "lede": "Email reimagined.\nAvailable today.\nGet started\nContact us"
+        },
+        "needsSmart": false
+      },
+      {
+        "index": 16,
+        "tag": "footer",
+        "role": "footer",
+        "subrole": null,
+        "confidence": 0.95,
+        "heading": null,
+        "bounds": {
+          "x": 0,
+          "y": 11593.921875,
+          "w": 1280,
+          "h": 596
+        },
+        "buttonCount": 0,
+        "cardCount": 30,
+        "slots": {
+          "lede": "2261 Market Street #5039\nSan Francisco, CA 94114"
+        },
+        "needsSmart": false
+      },
+      {
+        "index": 17,
+        "tag": "section",
+        "role": "content",
+        "subrole": null,
+        "confidence": 0.3,
+        "heading": null,
+        "bounds": {
+          "x": 0,
+          "y": 12189.921875,
+          "w": 1280,
+          "h": 0
+        },
+        "buttonCount": 0,
+        "cardCount": 0,
+        "slots": {},
+        "needsSmart": true
+      }
+    ],
+    "counts": {
+      "feature-grid": 2,
+      "hero": 4,
+      "content": 3,
+      "nav": 2,
+      "footer": 2,
+      "testimonial": 3,
+      "sidebar": 1,
+      "cta": 1
+    },
+    "readingOrder": [
+      "feature-grid",
+      "hero",
+      "content",
+      "hero",
+      "nav",
+      "footer",
+      "testimonial",
+      "hero",
+      "content",
+      "testimonial",
+      "nav",
+      "sidebar",
+      "hero",
+      "feature-grid",
+      "testimonial",
+      "cta",
+      "footer",
+      "content"
+    ]
+  }
+}
