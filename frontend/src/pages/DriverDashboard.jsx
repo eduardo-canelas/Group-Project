@@ -1,7 +1,9 @@
-import React, { startTransition, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import React, { startTransition, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AIAssistant from '../components/ai-assistant';
 import { AccuracyCommandPanel, PackageJourneyTimeline, RouteMapPanel, ScanConsole } from '../components/logistics-intelligence';
+import DriverTour from '../components/driver-tour';
+import { clearDriverTourFlag, hasSeenDriverTour } from '../components/driver-tour-storage';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { usePageMotion } from '../components/motion';
@@ -319,9 +321,17 @@ function formatTimestamp(value) {
   return Number.isNaN(date.getTime()) ? 'No scan yet' : timestampFormatter.format(date);
 }
 
-function DriverLoadLedger({ packages = [], loadingId, onUpdateStatus, focusedPackageId }) {
+function DriverLoadLedger({ packages = [], loadingId, onUpdateStatus, focusedPackageId, onScanFirst }) {
   if (!packages.length) {
-    return <EmptyState title="No active loads on manifest" />;
+    return (
+      <EmptyState
+        title="No active loads on manifest"
+        description="Once dispatch assigns a load it shows up here. You can still scan a package any time."
+        action={onScanFirst ? (
+          <PrimaryButton type="button" onClick={onScanFirst}>Scan a package</PrimaryButton>
+        ) : null}
+      />
+    );
   }
 
   return (
@@ -683,59 +693,142 @@ function RiskPulseBanner({ pulse, onDismiss }) {
   );
 }
 
+const RISK_DISMISS_KEY = 'routepulse:driver-risk-dismissed-v1';
+
 function DriverDashboard() {
   const [packages, setPackages] = useState([]);
   const [error, setError] = useState('');
   const [loadingId, setLoadingId] = useState('');
-  const [riskBannerDismissed, setRiskBannerDismissed] = useState(false);
+  const [riskBannerDismissed, setRiskBannerDismissed] = useState(() => {
+    try { return sessionStorage.getItem(RISK_DISMISS_KEY) === '1'; } catch { return false; }
+  });
   const [loadBoardSearch, setLoadBoardSearch] = useState('');
   const [loadBoardStatusFilter, setLoadBoardStatusFilter] = useState('all');
   const [hasTouchedLoadBoardSearch, setHasTouchedLoadBoardSearch] = useState(false);
   const [focusedPackageId, setFocusedPackageId] = useState('');
   const [assistantIntent, setAssistantIntent] = useState(null);
+  const [tourOpen, setTourOpen] = useState(false);
+  const [tourKey, setTourKey] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const [undoToast, setUndoToast] = useState(null);
+  const [lastUpdateAt, setLastUpdateAt] = useState(null);
   const navigate = useNavigate();
   const scope = usePageMotion();
   const updateWorkspaceRef = useRef(null);
   const loadBoardRef = useRef(null);
   const assistantPanelRef = useRef(null);
+  const scanPanelRef = useRef(null);
+  const undoTimerRef = useRef(null);
   const deferredLoadBoardSearch = useDeferredValue(loadBoardSearch);
   const currentUser = getStoredUser();
 
-  const fetchPackages = async () => {
+  const fetchPackages = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setRefreshing(true);
     try {
       const response = await api.get('/packages');
       setPackages(response.data);
+      setLastUpdateAt(Date.now());
+      if (!silent) setError('');
     } catch (requestError) {
       setError(requestError.response?.data?.error || requestError.response?.data?.message || 'Could not fetch packages.');
+    } finally {
+      if (!silent) setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void fetchPackages();
+  }, [fetchPackages]);
+
+  // Polling every 20s, paused when tab hidden
+  useEffect(() => {
+    let timer = null;
+    const tick = () => {
+      if (!document.hidden) void fetchPackages({ silent: true });
+    };
+    const start = () => {
+      if (timer) return;
+      timer = window.setInterval(tick, 20000);
+    };
+    const stop = () => {
+      if (timer) { window.clearInterval(timer); timer = null; }
+    };
+    const onVisibility = () => {
+      if (document.hidden) { stop(); return; }
+      void fetchPackages({ silent: true });
+      start();
+    };
+    start();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => { stop(); document.removeEventListener('visibilitychange', onVisibility); };
+  }, [fetchPackages]);
+
+  // First-run tour
+  useEffect(() => {
+    if (!hasSeenDriverTour()) {
+      const id = window.setTimeout(() => setTourOpen(true), 500);
+      return () => window.clearTimeout(id);
+    }
+    return undefined;
   }, []);
+
+  const openTour = () => { clearDriverTourFlag(); setTourKey((k) => k + 1); setTourOpen(true); };
+  const closeTour = () => setTourOpen(false);
+
+  const persistRiskDismiss = () => {
+    setRiskBannerDismissed(true);
+    try { sessionStorage.setItem(RISK_DISMISS_KEY, '1'); } catch { /* ignore */ }
+  };
+
+  const handleManualRefresh = () => { void fetchPackages(); };
 
   const handleEdit = (pkg) => {
     setFocusedPackageId(pkg._id);
     focusPackage(pkg._id);
   };
 
+  const dismissUndo = () => {
+    if (undoTimerRef.current) { window.clearTimeout(undoTimerRef.current); undoTimerRef.current = null; }
+    setUndoToast(null);
+  };
+
   const handleUpdateStatus = async (id, status) => {
     setError('');
     setLoadingId(id);
 
+    const previous = packages.find((pkg) => pkg._id === id);
+    const previousStatus = previous?.status;
+
+    // Optimistic update
+    setPackages((current) => current.map((pkg) => (pkg._id === id ? { ...pkg, status } : pkg)));
+
     try {
       await api.put(`/packages/${id}`, { status });
-      await fetchPackages();
+      await fetchPackages({ silent: true });
+      if (status === 'delivered' && previousStatus && previousStatus !== 'delivered') {
+        dismissUndo();
+        setUndoToast({ id, previousStatus, label: `Marked delivered — ${previous?.description || 'package'}` });
+        undoTimerRef.current = window.setTimeout(() => setUndoToast(null), 6000);
+      }
     } catch (requestError) {
+      // Rollback
+      setPackages((current) => current.map((pkg) => (pkg._id === id ? { ...pkg, status: previousStatus } : pkg)));
       setError(requestError.response?.data?.error || requestError.response?.data?.message || 'Could not update status.');
     } finally {
       setLoadingId('');
     }
   };
 
+  const handleUndoDelivered = async () => {
+    if (!undoToast) return;
+    const { id, previousStatus } = undoToast;
+    dismissUndo();
+    await handleUpdateStatus(id, previousStatus);
+  };
+
   const handleScan = async (scanPayload) => {
     const response = await api.post('/packages/scan', scanPayload);
-    await fetchPackages();
+    await fetchPackages({ silent: true });
     return response.data;
   };
 
@@ -846,7 +939,13 @@ function DriverDashboard() {
     if (!el) return;
     gsap.set(el, { autoAlpha: 1, y: 0 });
     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    setTimeout(() => ScrollTrigger.refresh(), 380);
+    window.requestAnimationFrame(() => ScrollTrigger.refresh());
+  };
+
+  const scrollToScan = () => {
+    const el = scanPanelRef.current;
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const focusPackage = (packageKey) => {
@@ -863,9 +962,13 @@ function DriverDashboard() {
 
     setFocusedPackageId(matched._id);
     scrollToUpdateWorkspace();
-    window.setTimeout(() => {
-      document.getElementById(`driver-load-${matched._id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 140);
+    const target = () => document.getElementById(`driver-load-${matched._id}`);
+    // rAF chain — wait until layout settles after parent scroll
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        target()?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    });
   };
 
   const useFollowUpPrompt = (promptText) => {
@@ -877,12 +980,33 @@ function DriverDashboard() {
 
   return (
     <AppShell
-      headerActions={<SecondaryButton type="button" onClick={handleLogout}>Log Out</SecondaryButton>}
+      headerActions={(
+        <>
+          <SecondaryButton
+            type="button"
+            onClick={handleManualRefresh}
+            className="driver-header-action"
+            aria-label="Refresh shipments"
+            disabled={refreshing}
+          >
+            {refreshing ? 'Refreshing…' : 'Refresh'}
+          </SecondaryButton>
+          <SecondaryButton
+            type="button"
+            onClick={openTour}
+            className="driver-header-action"
+            aria-label="Replay driver tour"
+          >
+            Help
+          </SecondaryButton>
+          <SecondaryButton type="button" onClick={handleLogout} className="driver-header-action">Log Out</SecondaryButton>
+        </>
+      )}
       headerClassName="dashboard-header"
     >
       <PageFrame className="dashboard-frame">
         <div ref={scope} className="space-y-5 sm:space-y-6">
-          <RiskPulseBanner pulse={riskPulse} onDismiss={() => setRiskBannerDismissed(true)} />
+          <RiskPulseBanner pulse={riskPulse} onDismiss={persistRiskDismiss} />
 
           <PageTitle
             kicker="Driver Dashboard"
@@ -894,11 +1018,19 @@ function DriverDashboard() {
                   <span className="shift-status-pill-dot" aria-hidden="true" />
                   <span>{currentUser?.username || 'driver'} live shift</span>
                 </GhostChip>
+                {lastUpdateAt ? (
+                  <GhostChip className="driver-sync-chip" title={new Date(lastUpdateAt).toLocaleTimeString()}>
+                    <span className="driver-sync-dot" aria-hidden="true" />
+                    Live · auto-sync 20s
+                  </GhostChip>
+                ) : null}
               </div>
             )}
           />
 
-          {error ? <Alert tone="error">{error}</Alert> : null}
+          <div aria-live="polite" aria-atomic="true">
+            {error ? <Alert tone="error">{error}</Alert> : null}
+          </div>
 
           <div className="dashboard-main-grid dashboard-main-grid-driver">
 
@@ -917,7 +1049,7 @@ function DriverDashboard() {
             </div>
 
             <div className="dashboard-stack driver-right-stack">
-              <GlassCard className="motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-ledger">
+              <GlassCard ref={scanPanelRef} data-tour="scan" className="motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-ledger">
                 <div className="dashboard-scroll-region dashboard-scroll-region-flow dashboard-scroll-fill">
                   <div className="grid gap-5">
                     <ScanConsole
@@ -937,7 +1069,7 @@ function DriverDashboard() {
                 </div>
               </GlassCard>
 
-              <GlassCard className="shift-guide-card motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-primary driver-support-panel">
+              <GlassCard data-tour="action-center" className="shift-guide-card motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-primary driver-support-panel">
                 <SectionHeading
                   kicker="Driver Support"
                   title="Action Center"
@@ -980,7 +1112,7 @@ function DriverDashboard() {
             </div>
 
             <div className="dashboard-stack driver-left-stack">
-              <GlassCard ref={updateWorkspaceRef} className="motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-update">
+              <GlassCard ref={updateWorkspaceRef} data-tour="update" className="motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-update">
                 <SectionHeading
                   kicker="Assigned Loads"
                   title="Update Workspace"
@@ -1004,13 +1136,14 @@ function DriverDashboard() {
                       loadingId={loadingId}
                       onUpdateStatus={handleUpdateStatus}
                       focusedPackageId={focusedPackageId}
+                      onScanFirst={scrollToScan}
                     />
                   </div>
 
                 </div>
               </GlassCard>
 
-              <GlassCard ref={loadBoardRef} className="hero-panel motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-primary load-board-panel">
+              <GlassCard ref={loadBoardRef} data-tour="board" className="hero-panel motion-section p-5 sm:p-6 flex flex-col dashboard-panel-fixed-primary load-board-panel">
                 <SectionHeading
                   title="Load Board"
                   description="Track every assigned load in one place."
@@ -1111,6 +1244,18 @@ function DriverDashboard() {
           </GlassCard>
         </div>
       </PageFrame>
+
+      <DriverTour key={tourKey} open={tourOpen} onClose={closeTour} />
+
+      {undoToast ? (
+        <div className="driver-undo-toast" role="status" aria-live="polite">
+          <p className="driver-undo-toast-text">{undoToast.label}</p>
+          <div className="driver-undo-toast-actions">
+            <button type="button" className="driver-undo-toast-action" onClick={handleUndoDelivered}>Undo</button>
+            <button type="button" className="driver-undo-toast-dismiss" onClick={dismissUndo} aria-label="Dismiss">×</button>
+          </div>
+        </div>
+      ) : null}
     </AppShell>
   );
 }

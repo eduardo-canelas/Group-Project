@@ -136,7 +136,6 @@ function shortLoc(str) {
 export function RouteMapPanel({
   packages = [],
   title = 'Route map',
-  description = 'Tap Navigate to get turn-by-turn directions.',
   onUpdateStatus,
   loadingId,
 }) {
@@ -307,13 +306,20 @@ export function ScanConsole({ title = 'Scan package', description = 'Scan by pac
   });
   const [scanState, setScanState] = useState({ busy: false, message: '', tone: 'info' });
   const [proofPhoto, setProofPhoto] = useState(null);
+  const [gpsStatus, setGpsStatus] = useState('unknown'); // unknown | ok | denied | unavailable
+  const [photoError, setPhotoError] = useState('');
   const photoInputRef = React.useRef(null);
 
   const handlePhotoChange = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    setPhotoError('');
     const img = new Image();
     const url = URL.createObjectURL(file);
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      setPhotoError('Could not read photo — try another file.');
+    };
     img.onload = () => {
       URL.revokeObjectURL(url);
       const MAX = 800;
@@ -340,13 +346,22 @@ export function ScanConsole({ title = 'Scan package', description = 'Scan by pac
 
   const captureGPS = () =>
     new Promise((resolve) => {
-      if (!navigator.geolocation) return resolve(null);
+      if (!navigator.geolocation) {
+        setGpsStatus('unavailable');
+        return resolve(null);
+      }
       navigator.geolocation.getCurrentPosition(
-        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => resolve(null),
+        (pos) => { setGpsStatus('ok'); resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }); },
+        (err) => {
+          setGpsStatus(err && err.code === 1 ? 'denied' : 'unavailable');
+          resolve(null);
+        },
         { timeout: 5000, maximumAge: 30000 },
       );
     });
+
+  const isDeliveryScan = scanForm.scanType === 'delivery';
+  const needsProofWarning = isDeliveryScan && !proofPhoto;
 
   const submitScan = async (event) => {
     event.preventDefault();
@@ -436,7 +451,7 @@ export function ScanConsole({ title = 'Scan package', description = 'Scan by pac
               onClick={() => { setProofPhoto(null); if (photoInputRef.current) photoInputRef.current.value = ''; }}
               aria-label="Remove photo"
             >
-              <svg width="12" height="12" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                 <path d="M4 4l12 12M16 4L4 16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
               </svg>
             </button>
@@ -451,13 +466,29 @@ export function ScanConsole({ title = 'Scan package', description = 'Scan by pac
             <span>Attach proof photo</span>
           </label>
         )}
+        {photoError ? (
+          <p className="scan-console-message scan-console-message-error" role="alert">{photoError}</p>
+        ) : null}
+        {needsProofWarning ? (
+          <p className="scan-console-warning" role="status">
+            Delivery scans really want a proof photo. Tap above to attach one before sending.
+          </p>
+        ) : null}
       </div>
 
-      <p className="scan-geo-indicator">
+      <p className={`scan-geo-indicator scan-geo-indicator-${gpsStatus}`}>
         <svg width="11" height="11" viewBox="0 0 20 20" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
           <path d="M10 2C6.686 2 4 4.686 4 8c0 4.5 6 10 6 10s6-5.5 6-10c0-3.314-2.686-6-6-6zm0 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4z" fill="currentColor" />
         </svg>
-        {navigator.geolocation ? 'GPS location sent to dispatch with each scan' : 'GPS not available — location will not be included'}
+        {gpsStatus === 'denied'
+          ? 'GPS permission denied — enable Location in browser settings to attach coordinates.'
+          : gpsStatus === 'unavailable'
+            ? 'GPS unavailable — scan will save without coordinates.'
+            : gpsStatus === 'ok'
+              ? 'GPS locked — last scan sent dispatch your coordinates.'
+              : navigator.geolocation
+                ? 'GPS coordinates sent to dispatch with each scan'
+                : 'GPS not supported on this device — scan will save without coordinates.'}
       </p>
 
       {scanState.message ? (

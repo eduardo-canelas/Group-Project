@@ -2579,6 +2579,14 @@
   color: var(--accent);
 }
 
+.scan-photo-input:focus-visible + .scan-photo-trigger,
+.scan-photo-trigger:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .scan-photo-zone {
   position: relative;
 }
@@ -2602,17 +2610,22 @@
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 2.75rem;
+  height: 2.75rem;
   border-radius: 9999px;
   border: none;
-  background: oklch(14% 0.02 230 / 0.72);
+  background: oklch(14% 0.02 230 / 0.78);
   color: oklch(97% 0.004 220);
   display: grid;
   place-items: center;
   cursor: pointer;
   backdrop-filter: blur(6px);
   transition: background 140ms ease-out;
+}
+
+.scan-photo-remove:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .scan-photo-remove:hover {
@@ -2960,7 +2973,7 @@ body:has(.auth-split) {
 
 .scan-console-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
   gap: 0.9rem;
 }
 
@@ -3995,9 +4008,9 @@ body:has(.auth-split) {
   }
 
   .dashboard-header .app-header-secondary-actions .button-secondary {
-    min-height: 2.3rem;
-    padding: 0.58rem 0.8rem;
-    font-size: 0.72rem;
+    min-height: 2.75rem;
+    padding: 0.72rem 0.95rem;
+    font-size: 0.78rem;
     letter-spacing: 0.04em;
   }
 
@@ -7104,3 +7117,270 @@ body:has(.auth-split) {
     display: none;
   }
 }
+
+/* ── Driver mobile reorder ───────────────────────────────────── */
+@media (max-width: 959px) {
+  .dashboard-main-grid-driver {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+  .dashboard-main-grid-driver .driver-right-stack { order: 1; }
+  .dashboard-main-grid-driver .driver-left-stack { order: 2; }
+  .dashboard-main-grid-driver .driver-ai-slot { order: 3; }
+}
+
+/* ── Driver sync chip ───────────────────────────────────────── */
+.driver-sync-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.driver-sync-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 9999px;
+  background: oklch(72% 0.18 145);
+  box-shadow: 0 0 0 0 oklch(72% 0.18 145 / 0.65);
+  animation: driver-sync-pulse 2.4s ease-out infinite;
+}
+
+@keyframes driver-sync-pulse {
+  0% { box-shadow: 0 0 0 0 oklch(72% 0.18 145 / 0.55); }
+  70% { box-shadow: 0 0 0 8px oklch(72% 0.18 145 / 0); }
+  100% { box-shadow: 0 0 0 0 oklch(72% 0.18 145 / 0); }
+}
+
+/* ── Scan warning ───────────────────────────────────────────── */
+.scan-console-warning {
+  border-radius: 0.85rem;
+  border: 1px solid color-mix(in srgb, #f59e0b 48%, var(--border));
+  background: color-mix(in srgb, #f59e0b 12%, transparent);
+  color: color-mix(in srgb, #92400e 82%, var(--text));
+  padding: 0.65rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-top: 0.6rem;
+}
+
+.scan-geo-indicator-denied { color: oklch(60% 0.18 25); }
+.scan-geo-indicator-unavailable { color: oklch(62% 0.06 85); }
+
+.driver-header-action + .driver-header-action { margin-left: 0.5rem; }
+
+/* ── Driver coachmark tour ──────────────────────────────────── */
+.driver-tour {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  pointer-events: none;
+}
+
+.driver-tour-mask {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+}
+
+.driver-tour-spotlight-ring {
+  filter: drop-shadow(0 0 12px rgba(99, 174, 255, 0.55));
+  animation: driver-tour-ring-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes driver-tour-ring-pulse {
+  0%, 100% { opacity: 0.65; }
+  50% { opacity: 1; }
+}
+
+.driver-tour-tooltip {
+  position: fixed;
+  width: min(340px, calc(100vw - 24px));
+  background: oklch(99% 0.003 220);
+  color: oklch(18% 0.02 230);
+  border-radius: 1.05rem;
+  border: 1px solid oklch(90% 0.01 220);
+  box-shadow: 0 20px 48px -16px rgba(8, 14, 28, 0.55);
+  padding: 1.05rem 1.1rem 0.95rem;
+  pointer-events: auto;
+  z-index: 201;
+  animation: driver-tour-tooltip-in 220ms ease-out;
+}
+
+:root[data-theme='dark'] .driver-tour-tooltip {
+  background: oklch(20% 0.024 230);
+  color: oklch(95% 0.005 220);
+  border-color: oklch(32% 0.02 230);
+}
+
+@keyframes driver-tour-tooltip-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.driver-tour-step {
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: oklch(58% 0.13 235);
+  font-weight: 700;
+  margin: 0 0 0.35rem;
+}
+
+.driver-tour-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.4rem;
+}
+
+.driver-tour-body {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0 0 0.95rem;
+  color: color-mix(in srgb, currentColor 78%, transparent);
+}
+
+.driver-tour-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.driver-tour-nav { display: flex; gap: 0.5rem; }
+
+.driver-tour-skip,
+.driver-tour-back {
+  background: transparent;
+  border: none;
+  color: color-mix(in srgb, currentColor 60%, transparent);
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.55rem 0.6rem;
+  border-radius: 0.6rem;
+  min-height: 2.5rem;
+}
+
+.driver-tour-skip:hover,
+.driver-tour-back:hover {
+  color: currentColor;
+  background: color-mix(in srgb, currentColor 6%, transparent);
+}
+
+.driver-tour-next {
+  background: oklch(58% 0.13 235);
+  color: white;
+  border: none;
+  padding: 0.62rem 1.05rem;
+  border-radius: 0.7rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 2.75rem;
+  letter-spacing: 0.01em;
+  transition: background 140ms ease-out, transform 80ms ease-out;
+}
+
+.driver-tour-next:hover { background: oklch(54% 0.14 235); }
+.driver-tour-next:active { transform: translateY(1px); }
+.driver-tour-next:focus-visible,
+.driver-tour-skip:focus-visible,
+.driver-tour-back:focus-visible {
+  outline: 2px solid oklch(58% 0.13 235);
+  outline-offset: 2px;
+}
+
+.driver-tour-dots {
+  display: flex;
+  gap: 0.35rem;
+  justify-content: center;
+  margin-top: 0.85rem;
+}
+
+.driver-tour-dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 9999px;
+  background: color-mix(in srgb, currentColor 22%, transparent);
+  transition: background 160ms ease-out, width 160ms ease-out;
+}
+
+.driver-tour-dot.is-active {
+  background: oklch(58% 0.13 235);
+  width: 1.2rem;
+}
+
+/* ── Driver undo toast ─────────────────────────────────────── */
+.driver-undo-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 1.1rem);
+  transform: translateX(-50%);
+  z-index: 180;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.75rem 0.9rem 0.75rem 1.05rem;
+  border-radius: 999px;
+  background: oklch(18% 0.02 230);
+  color: oklch(96% 0.005 220);
+  border: 1px solid oklch(28% 0.02 230);
+  box-shadow: 0 18px 38px -14px rgba(8, 14, 28, 0.55);
+  max-width: min(420px, calc(100vw - 24px));
+  animation: driver-undo-in 220ms ease-out;
+}
+
+@keyframes driver-undo-in {
+  from { opacity: 0; transform: translate(-50%, 10px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.driver-undo-toast-text {
+  margin: 0;
+  font-size: 0.86rem;
+  font-weight: 600;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.driver-undo-toast-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.driver-undo-toast-action {
+  background: oklch(72% 0.16 165);
+  color: oklch(14% 0.02 230);
+  border: none;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.5rem 0.95rem;
+  cursor: pointer;
+  min-height: 2.4rem;
+  letter-spacing: 0.02em;
+}
+
+.driver-undo-toast-action:hover { background: oklch(68% 0.16 165); }
+
+.driver-undo-toast-dismiss {
+  background: transparent;
+  color: oklch(70% 0.01 220);
+  border: none;
+  border-radius: 9999px;
+  width: 2.1rem;
+  height: 2.1rem;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.driver-undo-toast-dismiss:hover { color: oklch(96% 0.005 220); }
