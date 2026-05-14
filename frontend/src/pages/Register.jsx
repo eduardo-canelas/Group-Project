@@ -4,6 +4,7 @@ import { Alert, Field, SelectInput, TextInput } from '../components/ui';
 import { ThemeToggle } from '../components/theme';
 import { usePageMotion } from '../components/motion';
 import { SeamlessVideo } from '../components/video-device';
+import { useAuthStatusBar } from '../components/use-auth-status-bar';
 import api from '../lib/api';
 
 const roles = [
@@ -19,6 +20,7 @@ function Register() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const scope = usePageMotion();
+  useAuthStatusBar();
 
   const handleRegister = async (event) => {
     event.preventDefault();
