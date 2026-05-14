@@ -2635,6 +2635,17 @@
 }
 
 /* Auth split layout — full-viewport, no shell header */
+html:has(.auth-split),
+body:has(.auth-split) {
+  background: oklch(99% 0.003 220);
+  overscroll-behavior-y: none;
+}
+
+:root[data-theme='dark'] html:has(.auth-split),
+:root[data-theme='dark'] body:has(.auth-split) {
+  background: oklch(14% 0.018 230);
+}
+
 .auth-split {
   display: flex;
   min-height: 100dvh;
