@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { useTheme } from './theme-context';
 
-const LIGHT_COLOR = '#c9c5bf';
-const DARK_COLOR = '#0e1116';
+const LIGHT_COLOR = '#e8e6e2';
+const DARK_COLOR = '#0a0d12';
 
 export function useAuthStatusBar() {
   const { theme } = useTheme();
