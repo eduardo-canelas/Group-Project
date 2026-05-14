@@ -2841,9 +2841,11 @@
   }
 
   .auth-split-visual {
-    min-height: 38dvh;
+    min-height: calc(38dvh + env(safe-area-inset-top));
     flex: none;
     position: relative;
+    margin-top: calc(-1 * env(safe-area-inset-top));
+    padding-top: env(safe-area-inset-top);
   }
 
   .auth-split-visual::after {
