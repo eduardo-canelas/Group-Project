@@ -5,6 +5,7 @@ import { ThemeToggle } from '../components/theme';
 import { usePageMotion } from '../components/motion';
 import { SeamlessVideo } from '../components/video-device';
 import { useAuthStatusBar } from '../components/use-auth-status-bar';
+import { getAuthErrorMessage, storeUser } from '../lib/auth';
 import api from '../lib/api';
 
 function Login() {
@@ -22,10 +23,10 @@ function Login() {
     setLoading(true);
     try {
       const response = await api.post('/auth/login', { username, password });
-      localStorage.setItem('user', JSON.stringify(response.data));
+      storeUser(response.data);
       navigate(response.data.role === 'admin' ? '/admin' : '/driver');
     } catch (requestError) {
-      setError(requestError.response?.data?.message || 'Login failed. Please check your credentials.');
+      setError(getAuthErrorMessage(requestError, 'Login failed. Please check your credentials.'));
     } finally {
       setLoading(false);
     }

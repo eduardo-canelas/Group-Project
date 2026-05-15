@@ -1,13 +1,37 @@
-require("dotenv").config();
-require("dotenv").config({ path: ".env.local", override: true });
-
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const path = require("path");
+const fs = require("fs");
+const dotenv = require("dotenv");
 
 const packageRoutes = require("./routes/packageRoutes");
 const authRoutes = require("./routes/authRoutes");
 const aiRoutes = require("./routes/aiRoutes");
+
+function loadEnvFile(filePath, { override = false } = {}) {
+    if (!fs.existsSync(filePath)) {
+        return;
+    }
+
+    const parsed = dotenv.parse(fs.readFileSync(filePath));
+    Object.entries(parsed).forEach(([key, value]) => {
+        if (!value) {
+            return;
+        }
+
+        if (override || !process.env[key]) {
+            process.env[key] = value;
+        }
+    });
+}
+
+const backendDir = __dirname;
+const projectRoot = path.resolve(backendDir, "..");
+loadEnvFile(path.join(projectRoot, ".env"));
+loadEnvFile(path.join(backendDir, ".env"));
+loadEnvFile(path.join(projectRoot, ".env.local"), { override: true });
+loadEnvFile(path.join(backendDir, ".env.local"), { override: true });
 
 const app = express();
 

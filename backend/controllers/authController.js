@@ -3,6 +3,14 @@ const localUserStore = require("../utils/localUserStore");
 const bcrypt = require("bcryptjs");
 const { isMongoConnected } = require("../utils/userDirectory");
 
+function serializeUser(user) {
+    return {
+        id: user._id ? user._id.toString() : user.id,
+        username: user.username,
+        role: user.role,
+    };
+}
+
 exports.register = async (req, res) => {
     try {
         const username = typeof req.body.username === "string" ? req.body.username.trim() : "";
@@ -21,11 +29,17 @@ exports.register = async (req, res) => {
 
             const user = new User({ username, password, role });
             await user.save();
-            return res.status(201).json({ message: "User created successfully" });
+            return res.status(201).json({
+                message: "User created successfully",
+                ...serializeUser(user),
+            });
         }
 
-        await localUserStore.createUser({ username, password, role });
-        return res.status(201).json({ message: "User created successfully" });
+        const user = await localUserStore.createUser({ username, password, role });
+        return res.status(201).json({
+            message: "User created successfully",
+            ...serializeUser(user),
+        });
     } catch (error) {
         if (error?.code === 11000 || error?.code === "DUPLICATE_USERNAME") {
             return res.status(400).json({ message: "Username already exists" });
@@ -71,9 +85,7 @@ exports.login = async (req, res) => {
         }
         res.status(200).json({
             message: "Login successful",
-            id: user._id ? user._id.toString() : user.id,
-            username: user.username,
-            role: user.role
+            ...serializeUser(user),
         });
     } catch (error) {
         res.status(500).json({ message: "log in failed", error: error.message });
