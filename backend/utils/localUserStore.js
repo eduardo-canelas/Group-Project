@@ -2,7 +2,8 @@ const fs = require("fs/promises");
 const path = require("path");
 const bcrypt = require("bcryptjs");
 
-const storageDir = path.join(__dirname, "..", "data");
+const storageDir = process.env.LOCAL_USER_STORE_DIR
+    || (process.env.VERCEL ? path.join("/tmp", "routepulse-data") : path.join(__dirname, "..", "data"));
 const storageFile = path.join(storageDir, "users.json");
 
 async function ensureStorageFile() {
